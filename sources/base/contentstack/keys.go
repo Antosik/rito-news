@@ -18,7 +18,7 @@ func (keys ContentStackKeys) String() string {
 }
 
 func GetContentStackKeys(url string, selectorToWait string, params *ContentStackQueryParameters) *ContentStackKeys {
-	keys := ContentStackKeys{}
+	var keys ContentStackKeys
 
 	path, _ := launcher.LookPath()
 	u := launcher.New().Bin(path).MustLaunch()
@@ -43,7 +43,7 @@ func GetContentStackKeys(url string, selectorToWait string, params *ContentStack
 			(&keys).api_key = ak.Str()
 		}
 
-		ctx.LoadResponse(http.DefaultClient, true)
+		_ = ctx.LoadResponse(http.DefaultClient, true)
 	})
 
 	go router.Run()

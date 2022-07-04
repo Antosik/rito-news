@@ -18,7 +18,7 @@ type ServerStatusEntryUpdate struct {
 	Translations []ServerStatusEntryTranslation `json:"translations"`
 	CreatedAt    time.Time                      `json:"created_at"`
 	Author       string                         `json:"author"`
-	Id           uint16                         `json:"id"`
+	Id           int                            `json:"id"`
 }
 
 type ServerStatusEntry struct {

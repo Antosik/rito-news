@@ -1,8 +1,8 @@
 package serverstatus
 
 import (
-	"fmt"
 	"rito-news/utils/abstract"
+	"strconv"
 	"strings"
 )
 
@@ -21,11 +21,11 @@ func getLocaleFromServerStatusEntryTranslations(translations []ServerStatusEntry
 		}
 	}
 
-	if result == "" {
-		return fallback
-	} else {
+	if result != "" {
 		return result
 	}
+
+	return fallback
 }
 
 func transformServerStatusEntryToNewsItems(status ServerStatusEntry, locale string) []abstract.NewsItem {
@@ -35,7 +35,7 @@ func transformServerStatusEntryToNewsItems(status ServerStatusEntry, locale stri
 
 	for i, update := range status.Updates {
 		items[i] = abstract.NewsItem{
-			Id:        fmt.Sprint(update.Id),
+			Id:        strconv.Itoa(update.Id),
 			Title:     title,
 			Summary:   getLocaleFromServerStatusEntryTranslations(update.Translations, locale),
 			Author:    update.Author,
@@ -48,7 +48,10 @@ func transformServerStatusEntryToNewsItems(status ServerStatusEntry, locale stri
 }
 
 func TransformServerStatusToNewsItems(status ServerStatusResponse, locale string) []abstract.NewsItem {
-	statuses := append(status.Incidents, status.Maintenances...)
+	statuses := make([]ServerStatusEntry, 0, len(status.Incidents)+len(status.Maintenances))
+	statuses = append(statuses, status.Incidents...)
+	statuses = append(statuses, status.Maintenances...)
+
 	var items []abstract.NewsItem
 
 	for _, entry := range statuses {
