@@ -1,7 +1,6 @@
 package riotgames_source
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -54,12 +53,12 @@ func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
 
 	res, err := http.Get(url)
 	if err != nil {
-		return "", errors.New("Can't load more news: " + err.Error())
+		return "", fmt.Errorf("can't load more news: %w", err)
 	}
 
 	body, _ := io.ReadAll(res.Body)
 	if err != nil {
-		return "", errors.New("Can't parse news body: " + err.Error())
+		return "", fmt.Errorf("can't parse news body: %w", err)
 	}
 
 	return strings.ReplaceAll(string(body), `\"`, `"`), nil
@@ -68,7 +67,7 @@ func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
 func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
-		return []abstract.NewsItem{}, errors.New("Can't read news content: " + err.Error())
+		return []abstract.NewsItem{}, fmt.Errorf("can't read news content: %w", err)
 	}
 
 	items := doc.Find(".summary")
@@ -91,7 +90,7 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, erro
 		if err != nil {
 			date, err = time.Parse("Jan 2, 2006", dateStr)
 			if err != nil {
-				return []abstract.NewsItem{}, errors.New("Can't parse article date: " + err.Error())
+				return []abstract.NewsItem{}, fmt.Errorf("can't parse article date: %w", err)
 			}
 		}
 
@@ -102,7 +101,7 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, erro
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, errors.New("Can't generate UUID: " + err.Error())
+			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		news[i] = abstract.NewsItem{

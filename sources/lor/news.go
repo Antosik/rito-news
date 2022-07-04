@@ -2,7 +2,6 @@ package lor_source
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"rito-news/sources/base/contentstack"
 	"rito-news/utils"
@@ -104,7 +103,7 @@ func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]LegendsO
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
 		if err != nil {
-			return []LegendsOfRuneterraNewsEntry{}, errors.New("Can't parse item: " + err.Error())
+			return []LegendsOfRuneterraNewsEntry{}, fmt.Errorf("can't parse item: %w", err)
 		}
 	}
 
@@ -131,7 +130,7 @@ func (client LegendsOfRuneterraNews) GetItems(count int) ([]abstract.NewsItem, e
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, errors.New("Can't generate UUID: " + err.Error())
+			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Author))

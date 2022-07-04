@@ -1,7 +1,6 @@
 package wr_source
 
 import (
-	"errors"
 	"fmt"
 	"rito-news/sources/base/serverstatus"
 	"rito-news/utils/abstract"
@@ -44,7 +43,7 @@ func (client WildRiftStatus) GetItems(locale string) ([]abstract.NewsItem, error
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(items[i].Url))
 		if err != nil {
-			return []abstract.NewsItem{}, errors.New("Can't generate UUID: " + err.Error())
+			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		items[i].Id = id.String()

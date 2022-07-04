@@ -2,7 +2,6 @@ package contentstack
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,14 +18,14 @@ type ContentStackQueryParameters struct {
 
 func GetContentStackItems(keys *ContentStackKeys, parameters *ContentStackQueryParameters) ([]json.RawMessage, error) {
 	if keys.access_token == "" || keys.api_key == "" {
-		return []json.RawMessage{}, errors.New("Incorrect api keys: " + keys.String())
+		return []json.RawMessage{}, fmt.Errorf("incorrect api keys: " + keys.String())
 	}
 
 	url := generateContentStackUrl(parameters)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return []json.RawMessage{}, errors.New("Can't create request: " + err.Error())
+		return []json.RawMessage{}, fmt.Errorf("can't create request: %w", err)
 	}
 
 	req.Header.Set("Accept", "application/json")
@@ -36,7 +35,7 @@ func GetContentStackItems(keys *ContentStackKeys, parameters *ContentStackQueryP
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return []json.RawMessage{}, errors.New("Unsuccessful request: " + err.Error())
+		return []json.RawMessage{}, fmt.Errorf("unsuccessful request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -44,7 +43,7 @@ func GetContentStackItems(keys *ContentStackKeys, parameters *ContentStackQueryP
 		Entries []json.RawMessage `json:"entries"`
 	}{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return []json.RawMessage{}, errors.New("Can't decode response: " + err.Error())
+		return []json.RawMessage{}, fmt.Errorf("can't decode response: %w", err)
 	}
 
 	return response.Entries, nil

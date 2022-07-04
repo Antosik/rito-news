@@ -2,7 +2,7 @@ package serverstatus
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -34,7 +34,7 @@ type ServerStatusResponse struct {
 func GetServerStatusItems(url string) (ServerStatusResponse, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return ServerStatusResponse{}, errors.New("Can't create request: " + err.Error())
+		return ServerStatusResponse{}, fmt.Errorf("can't create request: %w", err)
 	}
 
 	req.Header.Set("Accept", "application/json")
@@ -42,13 +42,13 @@ func GetServerStatusItems(url string) (ServerStatusResponse, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return ServerStatusResponse{}, errors.New("Unsuccessful request: " + err.Error())
+		return ServerStatusResponse{}, fmt.Errorf("unsuccessful request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var response ServerStatusResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return ServerStatusResponse{}, errors.New("Can't decode response: " + err.Error())
+		return ServerStatusResponse{}, fmt.Errorf("can't decode response: %w", err)
 	}
 
 	return response, nil

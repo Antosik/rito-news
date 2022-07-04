@@ -2,7 +2,6 @@ package riotgames_source
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"rito-news/utils"
 	"strings"
@@ -72,7 +71,7 @@ func (client RiotGamesJobs) parseData(data string) ([]RiotGamesJobsResponseEntry
 
 	err := json.Unmarshal([]byte(data), &results)
 	if err != nil {
-		return []RiotGamesJobsResponseEntry{}, errors.New("Can't parse data: " + err.Error())
+		return []RiotGamesJobsResponseEntry{}, fmt.Errorf("can't parse data: %w", err)
 	}
 
 	return results.Jobs, nil

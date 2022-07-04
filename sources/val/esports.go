@@ -2,7 +2,6 @@ package val_source
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"rito-news/sources/base/contentstack"
 	utils "rito-news/utils"
@@ -85,7 +84,7 @@ func (client VALORANTEsports) getContentStackItems(count int) ([]VALORANTEsports
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
 		if err != nil {
-			return []VALORANTEsportsEntry{}, errors.New("Can't parse item: " + err.Error())
+			return []VALORANTEsportsEntry{}, fmt.Errorf("can't parse item: %w", err)
 		}
 	}
 
@@ -115,7 +114,7 @@ func (client VALORANTEsports) GetItems(count int) ([]abstract.NewsItem, error) {
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, errors.New("Can't generate UUID: " + err.Error())
+			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Authors))
