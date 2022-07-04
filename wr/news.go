@@ -20,7 +20,7 @@ type WildRiftNewsEntry struct {
 }
 
 type wildRiftNewsAPIResponseEntry struct {
-	UID        string `json:"uid"`
+	UID        string `json:"id"`
 	Categories []struct {
 		Title string `json:"title"`
 	} `json:"categories"`
