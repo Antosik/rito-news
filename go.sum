@@ -4,8 +4,6 @@ github.com/andybalholm/cascadia v1.3.1 h1:nhxRkql1kdYCc8Snf7D5/D3spOX+dBgjA6u8x0
 github.com/andybalholm/cascadia v1.3.1/go.mod h1:R4bJ1UQfqADjvDa4P6HZHLh/3OxWWEqc0Sk8XGwHqvA=
 github.com/go-rod/rod v0.107.3 h1:s+auNxQW4CTV2DhZ8S6ooQ7CXED4xLJBZPvZTDFA4CA=
 github.com/go-rod/rod v0.107.3/go.mod h1:4SqYRUrcc4dSr9iT36YRZ4hdUAPg3A0O8RhxAMh0eCQ=
-github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
-github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/ysmood/goob v0.4.0 h1:HsxXhyLBeGzWXnqVKtmT9qM7EuVs/XOgkX7T6r1o1AQ=
 github.com/ysmood/goob v0.4.0/go.mod h1:u6yx7ZhS4Exf2MwciFr6nIM8knHQIE22lFpWHnfql18=
 github.com/ysmood/got v0.31.2 h1:+aNBkkXrVqZ0UJfeiOfuGbKq3kiJarjNl371Nxz6zLA=

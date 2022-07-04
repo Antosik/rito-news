@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"rito-news/sources/base/contentstack"
 	utils "rito-news/utils"
-	"rito-news/utils/abstract"
-	"sort"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type VALORANTEsportsEntry struct {
-	UID         string `json:"uid"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Authors     []struct {
+	UID         string    `json:"uid"`
+	Authors     []string  `json:"authors"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
+
+type valorantEsportsAPIResponseEntry struct {
+	UID     string `json:"uid"`
+	Authors []struct {
 		Title string `json:"title"`
 	} `json:"authors"`
 	BannerSettings struct {
@@ -26,7 +29,9 @@ type VALORANTEsportsEntry struct {
 		} `json:"banner"`
 	} `json:"banner_settings"`
 	Date         time.Time `json:"date"`
+	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
+	Title        string    `json:"title"`
 	Url          struct {
 		Url string `json:"url"`
 	} `json:"url"`
@@ -70,7 +75,7 @@ func (client VALORANTEsports) getContentStackParameters(count int) contentstack.
 	}
 }
 
-func (client VALORANTEsports) getContentStackItems(count int) ([]VALORANTEsportsEntry, error) {
+func (client VALORANTEsports) getContentStackItems(count int) ([]valorantEsportsAPIResponseEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
@@ -79,7 +84,7 @@ func (client VALORANTEsports) getContentStackItems(count int) ([]VALORANTEsports
 		return nil, err
 	}
 
-	items := make([]VALORANTEsportsEntry, len(rawitems))
+	items := make([]valorantEsportsAPIResponseEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -91,7 +96,7 @@ func (client VALORANTEsports) getContentStackItems(count int) ([]VALORANTEsports
 	return items, nil
 }
 
-func (client VALORANTEsports) generateNewsLink(entry VALORANTEsportsEntry) string {
+func (client VALORANTEsports) generateNewsLink(entry valorantEsportsAPIResponseEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
@@ -101,40 +106,32 @@ func (client VALORANTEsports) generateNewsLink(entry VALORANTEsportsEntry) strin
 	return fmt.Sprintf("https://valorantesports.com/%s/%s", utils.TrimSlashes(entry.Url.Url), client.Locale)
 }
 
-func (client VALORANTEsports) GetItems(count int) ([]abstract.NewsItem, error) {
-	stackItems, err := client.getContentStackItems(count)
+func (client VALORANTEsports) GetItems(count int) ([]VALORANTEsportsEntry, error) {
+	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]abstract.NewsItem, len(stackItems))
+	results := make([]VALORANTEsportsEntry, len(items))
 
-	for i, item := range stackItems {
+	for i, item := range items {
 		url := client.generateNewsLink(item)
-
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
 
 		authors := make([]string, len(item.Authors))
 		for i, author := range item.Authors {
 			authors[i] = author.Title
 		}
 
-		items[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Title:     item.Title,
-			Summary:   item.Description,
-			Url:       url,
-			Author:    strings.Join(authors, ","),
-			Image:     item.BannerSettings.Banner.Url,
-			CreatedAt: item.Date,
-			UpdatedAt: item.Date,
+		results[i] = VALORANTEsportsEntry{
+			UID:         item.UID,
+			Authors:     authors,
+			Date:        item.Date,
+			Description: item.Description,
+			Image:       item.BannerSettings.Banner.Url,
+			Title:       item.Title,
+			Url:         url,
 		}
 	}
 
-	sort.Sort(abstract.ByCreatedAt(items))
-
-	return items, nil
+	return results, nil
 }

@@ -5,26 +5,32 @@ import (
 	"fmt"
 	"rito-news/sources/base/contentstack"
 	"rito-news/utils"
-	"rito-news/utils/abstract"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type LeagueOfLegendsEsportsEntry struct {
+	UID         string    `json:"uid"`
+	Authors     []string  `json:"authors"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
+
+type leagueOfLegendsEsportsAPIResponseEntry struct {
 	UID    string `json:"uid"`
-	Title  string `json:"title"`
-	Intro  string `json:"intro"`
 	Author []struct {
 		Title string `json:"title"`
 	} `json:"author"`
-	Image struct {
-		Url string `json:"url"`
-	} `json:"header_image"`
 	Date         time.Time `json:"date"`
 	ExternalLink string    `json:"external_link"`
-	Url          string    `json:"url"`
+	HeaderImage  struct {
+		Url string `json:"url"`
+	} `json:"header_image"`
+	Intro string `json:"intro"`
+	Title string `json:"title"`
+	Url   string `json:"url"`
 }
 
 type LeagueOfLegendsEsports struct {
@@ -63,7 +69,7 @@ func (client LeagueOfLegendsEsports) getContentStackParameters(count int) conten
 	}
 }
 
-func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]LeagueOfLegendsEsportsEntry, error) {
+func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]leagueOfLegendsEsportsAPIResponseEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
@@ -72,7 +78,7 @@ func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]LeagueOf
 		return nil, err
 	}
 
-	items := make([]LeagueOfLegendsEsportsEntry, len(rawitems))
+	items := make([]leagueOfLegendsEsportsAPIResponseEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -84,45 +90,38 @@ func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]LeagueOf
 	return items, nil
 }
 
-func (LeagueOfLegendsEsports) generateNewsLink(entry LeagueOfLegendsEsportsEntry) string {
+func (LeagueOfLegendsEsports) generateNewsLink(entry leagueOfLegendsEsportsAPIResponseEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
 	return fmt.Sprintf("https://lolesports.com/%s", utils.TrimSlashes(entry.Url))
 }
 
-func (client LeagueOfLegendsEsports) GetItems(count int) ([]abstract.NewsItem, error) {
-	stackItems, err := client.getContentStackItems(count)
+func (client LeagueOfLegendsEsports) GetItems(count int) ([]LeagueOfLegendsEsportsEntry, error) {
+	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]abstract.NewsItem, len(stackItems))
-
-	for i, item := range stackItems {
+	results := make([]LeagueOfLegendsEsportsEntry, len(items))
+	for i, item := range items {
 		url := client.generateNewsLink(item)
-
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
 			authors[i] = author.Title
 		}
 
-		items[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Title:     item.Title,
-			Summary:   item.Intro,
-			Url:       url,
-			Author:    strings.Join(authors, ","),
-			Image:     item.Image.Url,
-			CreatedAt: item.Date,
-			UpdatedAt: item.Date,
+		results[i] = LeagueOfLegendsEsportsEntry{
+			UID:         item.UID,
+			Authors:     authors,
+			Date:        item.Date,
+			Description: item.Intro,
+			Image:       item.HeaderImage.Url,
+			Title:       item.Title,
+			Url:         url,
 		}
 	}
 
-	return items, nil
+	return results, nil
 }

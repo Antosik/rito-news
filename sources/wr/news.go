@@ -5,15 +5,22 @@ import (
 	"fmt"
 	"net/http"
 	"rito-news/utils"
-	"rito-news/utils/abstract"
-	"sort"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type WildRiftNewsEntry struct {
+	UID         string    `json:"uid"`
+	Categories  []string  `json:"categories"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
+
+type wildRiftNewsAPIResponseEntry struct {
+	UID        string `json:"uid"`
 	Categories []struct {
 		Title string `json:"title"`
 	} `json:"categories"`
@@ -32,15 +39,14 @@ type WildRiftNewsEntry struct {
 		Title string `json:"title"`
 	} `json:"tags"`
 	Title       string `json:"title"`
-	UID         string `json:"uid"`
 	YouTubeLink string `json:"youtubeLink"`
 }
 
-type WildRiftNewsResponse struct {
+type wildRiftNewsAPIResponse struct {
 	Result struct {
 		Data struct {
 			AllContentstackArticles struct {
-				Articles []WildRiftNewsEntry `json:"articles"`
+				Articles []wildRiftNewsAPIResponseEntry `json:"articles"`
 			} `json:"allContentstackArticles"`
 		} `json:"data"`
 	} `json:"result"`
@@ -50,7 +56,7 @@ type WildRiftNews struct {
 	Locale string
 }
 
-func (client WildRiftNews) loadItems(count int) ([]WildRiftNewsEntry, error) {
+func (client WildRiftNews) loadItems(count int) ([]wildRiftNewsAPIResponseEntry, error) {
 	url := fmt.Sprintf(
 		"https://wildrift.leagueoflegends.com/page-data/%s/news/page-data.json",
 		client.Locale,
@@ -61,7 +67,7 @@ func (client WildRiftNews) loadItems(count int) ([]WildRiftNewsEntry, error) {
 	}
 	defer res.Body.Close()
 
-	var response WildRiftNewsResponse
+	var response wildRiftNewsAPIResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
@@ -69,7 +75,7 @@ func (client WildRiftNews) loadItems(count int) ([]WildRiftNewsEntry, error) {
 	return response.Result.Data.AllContentstackArticles.Articles[:count], nil
 }
 
-func (client WildRiftNews) generateNewsLink(entry WildRiftNewsEntry) string {
+func (client WildRiftNews) generateNewsLink(entry wildRiftNewsAPIResponseEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
@@ -79,35 +85,38 @@ func (client WildRiftNews) generateNewsLink(entry WildRiftNewsEntry) string {
 	return fmt.Sprintf("https://wildrift.leagueoflegends.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Link.Url))
 }
 
-func (client WildRiftNews) GetItems(count int) ([]abstract.NewsItem, error) {
+func (client WildRiftNews) GetItems(count int) ([]WildRiftNewsEntry, error) {
 	stackItems, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]abstract.NewsItem, len(stackItems))
+	items := make([]WildRiftNewsEntry, len(stackItems))
 
 	for i, item := range stackItems {
 		url := client.generateNewsLink(item)
 
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
+		categories := make([]string, len(item.Categories))
+		for i, category := range item.Categories {
+			categories[i] = category.Title
 		}
 
-		items[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Title:     item.Title,
-			Summary:   item.Description,
-			Url:       url,
-			Image:     item.FeaturedImage.Banner.Url,
-			Category:  item.Categories[0].Title,
-			CreatedAt: item.Date,
-			UpdatedAt: item.Date,
+		tags := make([]string, len(item.Tags))
+		for i, tag := range item.Tags {
+			tags[i] = tag.Title
+		}
+
+		items[i] = WildRiftNewsEntry{
+			UID:         item.UID,
+			Categories:  categories,
+			Date:        item.Date,
+			Description: item.Description,
+			Image:       item.FeaturedImage.Banner.Url,
+			Tags:        tags,
+			Title:       item.Title,
+			Url:         url,
 		}
 	}
-
-	sort.Sort(abstract.ByCreatedAt(items))
 
 	return items, nil
 }

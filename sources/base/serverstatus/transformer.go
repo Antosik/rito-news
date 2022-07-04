@@ -1,12 +1,11 @@
 package serverstatus
 
 import (
-	"rito-news/utils/abstract"
 	"strconv"
 	"strings"
 )
 
-func getLocaleFromServerStatusEntryTranslations(translations []ServerStatusEntryTranslation, locale string) string {
+func getLocaleFromServerStatusEntryTranslations(translations []serverStatusEntryAPITranslation, locale string) string {
 	var fallback string
 	var result string
 
@@ -28,31 +27,34 @@ func getLocaleFromServerStatusEntryTranslations(translations []ServerStatusEntry
 	return fallback
 }
 
-func transformServerStatusEntryToNewsItems(status ServerStatusEntry, locale string) []abstract.NewsItem {
-	items := make([]abstract.NewsItem, len(status.Updates))
+func transformServerStatusEntryToNewsItems(status serverStatusAPIEntry, locale string) []ServerStatusEntry {
+	items := make([]ServerStatusEntry, 0, len(status.Updates))
 
 	title := getLocaleFromServerStatusEntryTranslations(status.Titles, locale)
 
-	for i, update := range status.Updates {
-		items[i] = abstract.NewsItem{
-			Id:        strconv.Itoa(update.Id),
-			Title:     title,
-			Summary:   getLocaleFromServerStatusEntryTranslations(update.Translations, locale),
-			Author:    update.Author,
-			CreatedAt: update.CreatedAt,
-			UpdatedAt: update.CreatedAt,
+	for _, update := range status.Updates {
+		if !update.Publish {
+			continue
 		}
+
+		items = append(items, ServerStatusEntry{
+			UID:         strconv.Itoa(update.Id),
+			Title:       title,
+			Description: getLocaleFromServerStatusEntryTranslations(update.Translations, locale),
+			Author:      update.Author,
+			Date:        update.CreatedAt,
+		})
 	}
 
 	return items
 }
 
-func TransformServerStatusToNewsItems(status ServerStatusResponse, locale string) []abstract.NewsItem {
-	statuses := make([]ServerStatusEntry, 0, len(status.Incidents)+len(status.Maintenances))
+func TransformServerStatusToNewsItems(status serverStatusAPIResponse, locale string) []ServerStatusEntry {
+	statuses := make([]serverStatusAPIEntry, 0, len(status.Incidents)+len(status.Maintenances))
 	statuses = append(statuses, status.Incidents...)
 	statuses = append(statuses, status.Maintenances...)
 
-	var items []abstract.NewsItem
+	var items []ServerStatusEntry
 
 	for _, entry := range statuses {
 		items = append(items, transformServerStatusEntryToNewsItems(entry, locale)...)

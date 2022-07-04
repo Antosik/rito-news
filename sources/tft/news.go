@@ -5,15 +5,22 @@ import (
 	"fmt"
 	"net/http"
 	"rito-news/utils"
-	"rito-news/utils/abstract"
-	"sort"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type TeamfightTacticsNewsEntry struct {
+	UID         string    `json:"uid"`
+	Authors     []string  `json:"authors"`
+	Categories  []string  `json:"categories"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
+
+type teamfightTacticsNewsAPIResponseEntry struct {
+	UID    string `json:"uid"`
 	Author []struct {
 		Title string `json:"title"`
 	} `json:"author"`
@@ -27,20 +34,19 @@ type TeamfightTacticsNewsEntry struct {
 	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
 	Title        string    `json:"title"`
-	UID          string    `json:"uid"`
 	Url          struct {
 		Url string `json:"url"`
 	} `json:"url"`
 	YouTubeLink string `json:"youtube_link"`
 }
 
-type TeamfightTacticsNewsResponse struct {
+type teamfightTacticsNewsAPIResponse struct {
 	Result struct {
 		Data struct {
 			All struct {
 				Edges []struct {
 					Node struct {
-						Entries []TeamfightTacticsNewsEntry `json:"entries"`
+						Entries []teamfightTacticsNewsAPIResponseEntry `json:"entries"`
 					} `json:"node"`
 				} `json:"edges"`
 			} `json:"all"`
@@ -52,7 +58,7 @@ type TeamfightTacticsNews struct {
 	Locale string
 }
 
-func (client TeamfightTacticsNews) loadItems(count int) ([]TeamfightTacticsNewsEntry, error) {
+func (client TeamfightTacticsNews) loadItems(count int) ([]teamfightTacticsNewsAPIResponseEntry, error) {
 	url := fmt.Sprintf(
 		"https://teamfighttactics.leagueoflegends.com/page-data/%s/news/page-data.json",
 		client.Locale,
@@ -63,7 +69,7 @@ func (client TeamfightTacticsNews) loadItems(count int) ([]TeamfightTacticsNewsE
 	}
 	defer res.Body.Close()
 
-	var response TeamfightTacticsNewsResponse
+	var response teamfightTacticsNewsAPIResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
@@ -71,7 +77,7 @@ func (client TeamfightTacticsNews) loadItems(count int) ([]TeamfightTacticsNewsE
 	return response.Result.Data.All.Edges[0].Node.Entries[:count], nil
 }
 
-func (client TeamfightTacticsNews) generateNewsLink(entry TeamfightTacticsNewsEntry) string {
+func (client TeamfightTacticsNews) generateNewsLink(entry teamfightTacticsNewsAPIResponseEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
@@ -81,46 +87,38 @@ func (client TeamfightTacticsNews) generateNewsLink(entry TeamfightTacticsNewsEn
 	return fmt.Sprintf("https://teamfighttactics.leagueoflegends.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Url.Url))
 }
 
-func (client TeamfightTacticsNews) GetItems(count int) ([]abstract.NewsItem, error) {
-	stackItems, err := client.loadItems(count)
+func (client TeamfightTacticsNews) GetItems(count int) ([]TeamfightTacticsNewsEntry, error) {
+	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]abstract.NewsItem, len(stackItems))
+	results := make([]TeamfightTacticsNewsEntry, len(items))
 
-	for i, item := range stackItems {
+	for i, item := range items {
 		url := client.generateNewsLink(item)
-
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
 			authors[i] = author.Title
 		}
 
-		var category string
-		if len(item.Category) > 0 {
-			category = item.Category[0].Title
+		categories := make([]string, len(item.Author))
+		for i, category := range item.Category {
+			categories[i] = category.Title
 		}
 
-		items[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Title:     item.Title,
-			Summary:   item.Description,
-			Url:       url,
-			Author:    strings.Join(authors, ","),
-			Image:     item.Banner.Url,
-			Category:  category,
-			CreatedAt: item.Date,
-			UpdatedAt: item.Date,
+		results[i] = TeamfightTacticsNewsEntry{
+			UID:         item.UID,
+			Authors:     authors,
+			Categories:  categories,
+			Date:        item.Date,
+			Description: item.Description,
+			Image:       item.Banner.Url,
+			Title:       item.Title,
+			Url:         url,
 		}
 	}
 
-	sort.Sort(abstract.ByCreatedAt(items))
-
-	return items, nil
+	return results, nil
 }

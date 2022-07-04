@@ -5,15 +5,21 @@ import (
 	"io"
 	"net/http"
 	"rito-news/utils"
-	"rito-news/utils/abstract"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
-	"github.com/google/uuid"
 )
+
+type RiotGamesNewsEntry struct {
+	Category    string    `json:"category"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
 
 type RiotGamesNews struct {
 	Locale string
@@ -64,14 +70,14 @@ func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
 	return strings.ReplaceAll(string(body), `\"`, `"`), nil
 }
 
-func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, error) {
+func (RiotGamesNews) extractNewsFromHTML(html string) ([]RiotGamesNewsEntry, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("can't read news content: %w", err)
 	}
 
 	items := doc.Find(".summary")
-	news := make([]abstract.NewsItem, items.Size())
+	news := make([]RiotGamesNewsEntry, items.Size())
 
 	for i := range items.Nodes {
 		el := items.Eq(i)
@@ -95,28 +101,20 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, erro
 			url = "https://www.riotgames.com/" + utils.TrimSlashes(url)
 		}
 
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
-
-		news[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Url:       url,
-			Title:     el.Find("h3 span").Text(),
-			Summary:   el.Find(".summary__sell").Text(),
-			Author:    "Riot Games",
-			Category:  el.Find(".eyebrow span").Text(),
-			Image:     el.Find("img").AttrOr("src", ""),
-			CreatedAt: date,
-			UpdatedAt: date,
+		news[i] = RiotGamesNewsEntry{
+			Category:    el.Find(".eyebrow span").Text(),
+			Date:        date,
+			Description: el.Find(".summary__sell").Text(),
+			Image:       el.Find("img").AttrOr("src", ""),
+			Title:       el.Find("h3 span").Text(),
+			Url:         url,
 		}
 	}
 
 	return news, nil
 }
 
-func (client RiotGamesNews) GetItems(count int) ([]abstract.NewsItem, error) {
+func (client RiotGamesNews) GetItems(count int) ([]RiotGamesNewsEntry, error) {
 	ids, initialsNews := client.initialLoad()
 
 	items, err := client.extractNewsFromHTML(initialsNews)
@@ -144,8 +142,6 @@ func (client RiotGamesNews) GetItems(count int) ([]abstract.NewsItem, error) {
 	} else {
 		items = items[:count]
 	}
-
-	sort.Sort(abstract.ByCreatedAt(items))
 
 	return items, nil
 }

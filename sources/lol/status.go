@@ -3,53 +3,39 @@ package lol_source
 import (
 	"fmt"
 	"rito-news/sources/base/serverstatus"
-	"rito-news/utils/abstract"
-	"sort"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type LeagueOfLegendsStatus struct {
 	Region string
 }
 
-func (client LeagueOfLegendsStatus) loadItems() (serverstatus.ServerStatusResponse, error) {
+func (client LeagueOfLegendsStatus) loadItems(locale string) ([]serverstatus.ServerStatusEntry, error) {
 	url := fmt.Sprintf(
 		"https://lol.secure.dyn.riotcdn.net/channels/public/x/status/%s.json",
 		client.Region,
 	)
-	return serverstatus.GetServerStatusItems(url)
+	return serverstatus.GetServerStatusItems(url, locale)
 }
 
-func (client LeagueOfLegendsStatus) generateNewsLink(entry abstract.NewsItem, locale string) string {
+func (client LeagueOfLegendsStatus) generateNewsLink(entry serverstatus.ServerStatusEntry, locale string) string {
 	return fmt.Sprintf(
 		"https://status.riotgames.com/lol?region=%s&locale=%s&id=%s",
 		client.Region,
 		strings.ReplaceAll(locale, "-", "_"),
-		entry.Id,
+		entry.UID,
 	)
 }
 
-func (client LeagueOfLegendsStatus) GetItems(locale string) ([]abstract.NewsItem, error) {
-	status, err := client.loadItems()
+func (client LeagueOfLegendsStatus) GetItems(locale string) ([]serverstatus.ServerStatusEntry, error) {
+	items, err := client.loadItems(locale)
 	if err != nil {
 		return nil, err
 	}
 
-	items := serverstatus.TransformServerStatusToNewsItems(status, locale)
 	for i := range items {
 		items[i].Url = client.generateNewsLink(items[i], locale)
-
-		id, err := uuid.NewRandomFromReader(strings.NewReader(items[i].Url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
-
-		items[i].Id = id.String()
 	}
-
-	sort.Sort(abstract.ByCreatedAt(items))
 
 	return items, nil
 }

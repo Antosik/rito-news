@@ -5,19 +5,23 @@ import (
 	"fmt"
 	"rito-news/sources/base/contentstack"
 	"rito-news/utils"
-	"rito-news/utils/abstract"
-	"sort"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type WildRiftEsportsEntry struct {
-	UID         string `json:"uid"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Authors     []struct {
+	UID         string    `json:"uid"`
+	Authors     []string  `json:"authors"`
+	Categories  []string  `json:"categories"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
+
+type wildRiftEsportsApiResponseEntry struct {
+	UID     string `json:"uid"`
+	Authors []struct {
 		Title string `json:"title"`
 	} `json:"authors"`
 	BannerSettings struct {
@@ -25,12 +29,13 @@ type WildRiftEsportsEntry struct {
 			Url string `json:"url"`
 		} `json:"banner"`
 	} `json:"banner_settings"`
-	Categories []struct {
-		MachineName string `json:"machine_name"`
-		Title       string `json:"title"`
+	Category []struct {
+		Title string `json:"title"`
 	} `json:"category"`
 	Date         time.Time `json:"date"`
+	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
+	Title        string    `json:"title"`
 	Url          struct {
 		Url string `json:"url"`
 	} `json:"url"`
@@ -57,7 +62,6 @@ func (client WildRiftEsports) getContentStackParameters(count int) contentstack.
 				"_content_type_uid",
 				"banner_settings",
 				"authors",
-				"article_tags",
 				"category",
 				"date",
 				"description",
@@ -80,7 +84,7 @@ func (client WildRiftEsports) getContentStackParameters(count int) contentstack.
 	}
 }
 
-func (client WildRiftEsports) getContentStackItems(count int) ([]WildRiftEsportsEntry, error) {
+func (client WildRiftEsports) getContentStackItems(count int) ([]wildRiftEsportsApiResponseEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
@@ -89,7 +93,7 @@ func (client WildRiftEsports) getContentStackItems(count int) ([]WildRiftEsports
 		return nil, err
 	}
 
-	items := make([]WildRiftEsportsEntry, len(rawitems))
+	items := make([]wildRiftEsportsApiResponseEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -101,47 +105,45 @@ func (client WildRiftEsports) getContentStackItems(count int) ([]WildRiftEsports
 	return items, nil
 }
 
-func (client WildRiftEsports) generateNewsLink(entry WildRiftEsportsEntry) string {
+func (client WildRiftEsports) generateNewsLink(entry wildRiftEsportsApiResponseEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
 	return fmt.Sprintf("https://wildriftesports.com/%s/%s", client.Locale, utils.TrimSlashes(entry.Url.Url))
 }
 
-func (client WildRiftEsports) GetItems(count int) ([]abstract.NewsItem, error) {
-	stackItems, err := client.getContentStackItems(count)
+func (client WildRiftEsports) GetItems(count int) ([]WildRiftEsportsEntry, error) {
+	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]abstract.NewsItem, len(stackItems))
+	results := make([]WildRiftEsportsEntry, len(items))
 
-	for i, item := range stackItems {
+	for i, item := range items {
 		url := client.generateNewsLink(item)
-
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
 
 		authors := make([]string, len(item.Authors))
 		for i, author := range item.Authors {
 			authors[i] = author.Title
 		}
 
-		items[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Title:     item.Title,
-			Summary:   item.Description,
-			Url:       url,
-			Author:    strings.Join(authors, ","),
-			Image:     item.BannerSettings.Banner.Url,
-			CreatedAt: item.Date,
-			UpdatedAt: item.Date,
+		categories := make([]string, len(item.Category))
+		for i, category := range item.Category {
+			categories[i] = category.Title
+		}
+
+		results[i] = WildRiftEsportsEntry{
+			UID:         item.UID,
+			Authors:     authors,
+			Categories:  categories,
+			Date:        item.Date,
+			Description: item.Description,
+			Image:       item.BannerSettings.Banner.Url,
+			Title:       item.Title,
+			Url:         url,
 		}
 	}
 
-	sort.Sort(abstract.ByCreatedAt(items))
-
-	return items, nil
+	return results, nil
 }

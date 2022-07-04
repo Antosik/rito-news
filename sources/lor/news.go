@@ -5,34 +5,39 @@ import (
 	"fmt"
 	"rito-news/sources/base/contentstack"
 	"rito-news/utils"
-	"rito-news/utils/abstract"
-	"sort"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type LegendsOfRuneterraNewsEntry struct {
+	UID         string    `json:"uid"`
+	Authors     []string  `json:"authors"`
+	Categories  []string  `json:"categories"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+}
+
+type legendsOfRuneterraNewsAPIResponseEntry struct {
 	UID         string `json:"uid"`
 	ArticleTags []struct {
-		MachineName string `json:"machine_name"`
-		Title       string `json:"title"`
+		Title string `json:"title"`
 	} `json:"article_tags"`
-	Categories []struct {
-		MachineName string `json:"machine_name"`
-		Title       string `json:"title"`
-	} `json:"category"`
-	Title   string `json:"title"`
-	Summary string `json:"summary"`
-	Author  []struct {
+	Author []struct {
 		Title string `json:"title"`
 	} `json:"author"`
-	Image struct {
+	Category []struct {
+		Title string `json:"title"`
+	} `json:"category"`
+	CoverImage struct {
 		Url string `json:"url"`
 	} `json:"cover_image"`
 	Date         time.Time `json:"date"`
 	ExternalLink string    `json:"external_link"`
+	Title        string    `json:"title"`
+	Summary      string    `json:"summary"`
 	Url          struct {
 		Url string `json:"url"`
 	} `json:"url"`
@@ -89,7 +94,7 @@ func (client LegendsOfRuneterraNews) getContentStackParameters(count int) conten
 	}
 }
 
-func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]LegendsOfRuneterraNewsEntry, error) {
+func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]legendsOfRuneterraNewsAPIResponseEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
@@ -98,7 +103,7 @@ func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]LegendsO
 		return nil, err
 	}
 
-	items := make([]LegendsOfRuneterraNewsEntry, len(rawitems))
+	items := make([]legendsOfRuneterraNewsAPIResponseEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -110,47 +115,51 @@ func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]LegendsO
 	return items, nil
 }
 
-func (client LegendsOfRuneterraNews) generateNewsLink(entry LegendsOfRuneterraNewsEntry) string {
+func (client LegendsOfRuneterraNews) generateNewsLink(entry legendsOfRuneterraNewsAPIResponseEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
 	return fmt.Sprintf("https://playruneterra.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Url.Url))
 }
 
-func (client LegendsOfRuneterraNews) GetItems(count int) ([]abstract.NewsItem, error) {
-	stackItems, err := client.getContentStackItems(count)
+func (client LegendsOfRuneterraNews) GetItems(count int) ([]LegendsOfRuneterraNewsEntry, error) {
+	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]abstract.NewsItem, len(stackItems))
+	results := make([]LegendsOfRuneterraNewsEntry, len(items))
 
-	for i, item := range stackItems {
+	for i, item := range items {
 		url := client.generateNewsLink(item)
-
-		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate UUID: %w", err)
-		}
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
 			authors[i] = author.Title
 		}
 
-		items[i] = abstract.NewsItem{
-			Id:        id.String(),
-			Title:     item.Title,
-			Summary:   item.Summary,
-			Url:       url,
-			Author:    strings.Join(authors, ","),
-			Image:     item.Image.Url,
-			CreatedAt: item.Date,
-			UpdatedAt: item.Date,
+		categories := make([]string, len(item.Category))
+		for i, category := range item.Category {
+			categories[i] = category.Title
+		}
+
+		tags := make([]string, len(item.ArticleTags))
+		for i, tag := range item.ArticleTags {
+			tags[i] = tag.Title
+		}
+
+		results[i] = LegendsOfRuneterraNewsEntry{
+			UID:         item.UID,
+			Authors:     authors,
+			Categories:  categories,
+			Date:        item.Date,
+			Description: item.Summary,
+			Image:       item.CoverImage.Url,
+			Tags:        tags,
+			Title:       item.Title,
+			Url:         url,
 		}
 	}
 
-	sort.Sort(abstract.ByCreatedAt(items))
-
-	return items, nil
+	return results, nil
 }

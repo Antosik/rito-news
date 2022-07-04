@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/go-rod/rod v0.107.3
-	github.com/google/uuid v1.3.0
 )
 
 require (

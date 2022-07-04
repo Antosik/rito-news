@@ -30,7 +30,7 @@ type RiotGamesJobsEntry struct {
 	Url      string                   `json:"url"`
 }
 
-type RiotGamesJobsResponseEntry struct {
+type riotGamesJobsResponseAPIResponseEntry struct {
 	Craft    string `json:"craft"`
 	CraftId  string `json:"craftId"`
 	Office   string `json:"office"`
@@ -40,8 +40,8 @@ type RiotGamesJobsResponseEntry struct {
 	Url      string `json:"url"`
 }
 
-type RiotGamesJobsResponse struct {
-	Jobs []RiotGamesJobsResponseEntry `json:"jobs"`
+type riotGamesJobsResponseAPIResponse struct {
+	Jobs []riotGamesJobsResponseAPIResponseEntry `json:"jobs"`
 }
 
 type RiotGamesJobs struct {
@@ -66,8 +66,8 @@ func (client RiotGamesJobs) loadData() (string, string) {
 	return *data, link
 }
 
-func (client RiotGamesJobs) parseData(data string) ([]RiotGamesJobsResponseEntry, error) {
-	var results RiotGamesJobsResponse
+func (client RiotGamesJobs) parseData(data string) ([]riotGamesJobsResponseAPIResponseEntry, error) {
+	var results riotGamesJobsResponseAPIResponse
 
 	err := json.Unmarshal([]byte(data), &results)
 	if err != nil {
@@ -80,13 +80,13 @@ func (client RiotGamesJobs) parseData(data string) ([]RiotGamesJobsResponseEntry
 func (client RiotGamesJobs) GetItems() ([]RiotGamesJobsEntry, error) {
 	data, link := client.loadData()
 
-	entries, err := client.parseData(data)
+	items, err := client.parseData(data)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]RiotGamesJobsEntry, len(entries))
-	for i, entry := range entries {
+	results := make([]RiotGamesJobsEntry, len(items))
+	for i, entry := range items {
 		results[i] = RiotGamesJobsEntry{
 			Craft: RiotGamesJobsEntryCraft{
 				Id:   entry.CraftId,
