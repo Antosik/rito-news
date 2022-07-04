@@ -1,8 +1,8 @@
-package lol_source
+package lol
 
 import (
 	"fmt"
-	"rito-news/sources/base/serverstatus"
+	"rito-news/lib/serverstatus"
 	"strings"
 )
 

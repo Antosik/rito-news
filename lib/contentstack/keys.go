@@ -21,7 +21,7 @@ func GetContentStackKeys(url string, selectorToWait string, params *ContentStack
 	var keys ContentStackKeys
 
 	path, _ := launcher.LookPath()
-	u := launcher.New().Bin(path).MustLaunch()
+	u := launcher.New().Bin(path).Headless(true).MustLaunch()
 	browser := rod.New().ControlURL(u).MustConnect()
 	defer browser.MustClose()
 

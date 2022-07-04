@@ -1,8 +1,8 @@
-package val_source
+package val
 
 import (
 	"fmt"
-	"rito-news/sources/base/serverstatus"
+	"rito-news/lib/serverstatus"
 	"strings"
 )
 

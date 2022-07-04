@@ -1,10 +1,10 @@
-package tft_source
+package tft
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"rito-news/utils"
+	"rito-news/lib/utils"
 	"time"
 )
 

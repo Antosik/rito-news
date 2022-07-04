@@ -1,10 +1,10 @@
-package lor_source
+package lor
 
 import (
 	"encoding/json"
 	"fmt"
-	"rito-news/sources/base/contentstack"
-	"rito-news/utils"
+	"rito-news/lib/contentstack"
+	"rito-news/lib/utils"
 	"time"
 )
 

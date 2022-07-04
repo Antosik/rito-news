@@ -1,10 +1,10 @@
-package val_source
+package val
 
 import (
 	"encoding/json"
 	"fmt"
-	"rito-news/sources/base/contentstack"
-	utils "rito-news/utils"
+	"rito-news/lib/contentstack"
+	"rito-news/lib/utils"
 	"time"
 )
 

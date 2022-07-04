@@ -1,10 +1,10 @@
-package riotgames_source
+package riotgames
 
 import (
 	"fmt"
 	"io"
 	"net/http"
-	"rito-news/utils"
+	"rito-news/lib/utils"
 	"strings"
 	"time"
 

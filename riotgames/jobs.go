@@ -1,9 +1,9 @@
-package riotgames_source
+package riotgames
 
 import (
 	"encoding/json"
 	"fmt"
-	"rito-news/utils"
+	"rito-news/lib/utils"
 	"strings"
 
 	"github.com/go-rod/rod"

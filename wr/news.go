@@ -1,10 +1,10 @@
-package wr_source
+package wr
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"rito-news/utils"
+	"rito-news/lib/utils"
 	"time"
 )
 

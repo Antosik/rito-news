@@ -1,8 +1,8 @@
-package lor_source
+package lor
 
 import (
 	"fmt"
-	"rito-news/sources/base/serverstatus"
+	"rito-news/lib/serverstatus"
 	"strings"
 )
 

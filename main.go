@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	lol_source "rito-news/sources/lol"
-	lor_source "rito-news/sources/lor"
-	riot_source "rito-news/sources/riotgames"
-	tft_source "rito-news/sources/tft"
-	val_source "rito-news/sources/val"
-	wr_source "rito-news/sources/wr"
+	lol_source "rito-news/lol"
+	lor_source "rito-news/lor"
+	riot_source "rito-news/riotgames"
+	tft_source "rito-news/tft"
+	val_source "rito-news/val"
+	wr_source "rito-news/wr"
 )
 
 func main() {

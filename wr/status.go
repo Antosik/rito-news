@@ -1,8 +1,8 @@
-package wr_source
+package wr
 
 import (
 	"fmt"
-	"rito-news/sources/base/serverstatus"
+	"rito-news/lib/serverstatus"
 	"strings"
 )
 
