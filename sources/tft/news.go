@@ -59,13 +59,13 @@ func (client TeamfightTacticsNews) loadItems(count int) ([]TeamfightTacticsNewsE
 	)
 	res, err := http.Get(url)
 	if err != nil {
-		return []TeamfightTacticsNewsEntry{}, fmt.Errorf("can't load news: %w", err)
+		return nil, fmt.Errorf("can't load news: %w", err)
 	}
 	defer res.Body.Close()
 
 	var response TeamfightTacticsNewsResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-		return []TeamfightTacticsNewsEntry{}, fmt.Errorf("can't decode response: %w", err)
+		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
 	return response.Result.Data.All.Edges[0].Node.Entries[:count], nil
@@ -84,7 +84,7 @@ func (client TeamfightTacticsNews) generateNewsLink(entry TeamfightTacticsNewsEn
 func (client TeamfightTacticsNews) GetItems(count int) ([]abstract.NewsItem, error) {
 	stackItems, err := client.loadItems(count)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := make([]abstract.NewsItem, len(stackItems))
@@ -94,7 +94,7 @@ func (client TeamfightTacticsNews) GetItems(count int) ([]abstract.NewsItem, err
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Author))

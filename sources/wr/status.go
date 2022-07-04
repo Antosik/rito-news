@@ -34,7 +34,7 @@ func (client WildRiftStatus) generateNewsLink(entry abstract.NewsItem, locale st
 func (client WildRiftStatus) GetItems(locale string) ([]abstract.NewsItem, error) {
 	status, err := client.loadItems()
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := serverstatus.TransformServerStatusToNewsItems(status, locale)
@@ -43,7 +43,7 @@ func (client WildRiftStatus) GetItems(locale string) ([]abstract.NewsItem, error
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(items[i].Url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		items[i].Id = id.String()

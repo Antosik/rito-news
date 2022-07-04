@@ -95,7 +95,7 @@ func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]LegendsO
 
 	rawitems, err := contentstack.GetContentStackItems(keys, &params)
 	if err != nil {
-		return []LegendsOfRuneterraNewsEntry{}, err
+		return nil, err
 	}
 
 	items := make([]LegendsOfRuneterraNewsEntry, len(rawitems))
@@ -103,7 +103,7 @@ func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]LegendsO
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
 		if err != nil {
-			return []LegendsOfRuneterraNewsEntry{}, fmt.Errorf("can't parse item: %w", err)
+			return nil, fmt.Errorf("can't parse item: %w", err)
 		}
 	}
 
@@ -120,7 +120,7 @@ func (client LegendsOfRuneterraNews) generateNewsLink(entry LegendsOfRuneterraNe
 func (client LegendsOfRuneterraNews) GetItems(count int) ([]abstract.NewsItem, error) {
 	stackItems, err := client.getContentStackItems(count)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := make([]abstract.NewsItem, len(stackItems))
@@ -130,7 +130,7 @@ func (client LegendsOfRuneterraNews) GetItems(count int) ([]abstract.NewsItem, e
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Author))

@@ -48,13 +48,13 @@ func (client VALORANTNews) loadItems(count int) ([]VALORANTNewsEntry, error) {
 	)
 	res, err := http.Get(url)
 	if err != nil {
-		return []VALORANTNewsEntry{}, fmt.Errorf("can't load news: %w", err)
+		return nil, fmt.Errorf("can't load news: %w", err)
 	}
 	defer res.Body.Close()
 
 	var response VALORANTNewsResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-		return []VALORANTNewsEntry{}, fmt.Errorf("can't decode response: %w", err)
+		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
 	return response.Result.Data.AllContentstackArticles.Nodes[:count], nil
@@ -70,7 +70,7 @@ func (client VALORANTNews) generateNewsLink(entry VALORANTNewsEntry) string {
 func (client VALORANTNews) GetItems(count int) ([]abstract.NewsItem, error) {
 	stackItems, err := client.loadItems(count)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := make([]abstract.NewsItem, len(stackItems))
@@ -80,7 +80,7 @@ func (client VALORANTNews) GetItems(count int) ([]abstract.NewsItem, error) {
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		items[i] = abstract.NewsItem{

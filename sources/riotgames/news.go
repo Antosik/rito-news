@@ -67,7 +67,7 @@ func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
 func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
-		return []abstract.NewsItem{}, fmt.Errorf("can't read news content: %w", err)
+		return nil, fmt.Errorf("can't read news content: %w", err)
 	}
 
 	items := doc.Find(".summary")
@@ -76,12 +76,8 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, erro
 	for i := range items.Nodes {
 		el := items.Eq(i)
 
-		title := el.Find("h3 span").Text()
-		summary := el.Find(".summary__sell").Text()
-		category := el.Find(".eyebrow span").Text()
-		image := el.Find("img").AttrOr("src", "")
-
 		dateStr := el.Find(".summary__date").Text()
+
 		var (
 			date time.Time
 			err  error
@@ -90,7 +86,7 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, erro
 		if err != nil {
 			date, err = time.Parse("Jan 2, 2006", dateStr)
 			if err != nil {
-				return []abstract.NewsItem{}, fmt.Errorf("can't parse article date: %w", err)
+				return nil, fmt.Errorf("can't parse article date: %w", err)
 			}
 		}
 
@@ -101,17 +97,17 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]abstract.NewsItem, erro
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		news[i] = abstract.NewsItem{
 			Id:        id.String(),
 			Url:       url,
-			Title:     title,
-			Summary:   summary,
+			Title:     el.Find("h3 span").Text(),
+			Summary:   el.Find(".summary__sell").Text(),
 			Author:    "Riot Games",
-			Category:  category,
-			Image:     image,
+			Category:  el.Find(".eyebrow span").Text(),
+			Image:     el.Find("img").AttrOr("src", ""),
 			CreatedAt: date,
 			UpdatedAt: date,
 		}
@@ -125,7 +121,7 @@ func (client RiotGamesNews) GetItems(count int) ([]abstract.NewsItem, error) {
 
 	items, err := client.extractNewsFromHTML(initialsNews)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	if count > len(items) {
@@ -136,12 +132,12 @@ func (client RiotGamesNews) GetItems(count int) ([]abstract.NewsItem, error) {
 
 		news, err := client.loadNewsWithIds(ids[:idsToLoadCount])
 		if err != nil {
-			return []abstract.NewsItem{}, err
+			return nil, err
 		}
 
 		additionalNews, err := client.extractNewsFromHTML(news)
 		if err != nil {
-			return []abstract.NewsItem{}, err
+			return nil, err
 		}
 
 		items = append(items, additionalNews...)

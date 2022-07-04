@@ -57,13 +57,13 @@ func (client LeagueOfLegendsNews) loadItems(count int) ([]LeagueOfLegendsNewsEnt
 	)
 	res, err := http.Get(url)
 	if err != nil {
-		return []LeagueOfLegendsNewsEntry{}, fmt.Errorf("can't load news: %w", err)
+		return nil, fmt.Errorf("can't load news: %w", err)
 	}
 	defer res.Body.Close()
 
 	var response LeagueOfLegendsNewsResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-		return []LeagueOfLegendsNewsEntry{}, fmt.Errorf("can't decode response: %w", err)
+		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
 	return response.Result.Data.AllArticles.Edges[:count], nil
@@ -79,7 +79,7 @@ func (client LeagueOfLegendsNews) generateNewsLink(entry LeagueOfLegendsNewsEntr
 func (client LeagueOfLegendsNews) GetItems(count int) ([]abstract.NewsItem, error) {
 	stackItems, err := client.loadItems(count)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := make([]abstract.NewsItem, len(stackItems))
@@ -89,7 +89,7 @@ func (client LeagueOfLegendsNews) GetItems(count int) ([]abstract.NewsItem, erro
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Node.Author))

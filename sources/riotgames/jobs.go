@@ -71,7 +71,7 @@ func (client RiotGamesJobs) parseData(data string) ([]RiotGamesJobsResponseEntry
 
 	err := json.Unmarshal([]byte(data), &results)
 	if err != nil {
-		return []RiotGamesJobsResponseEntry{}, fmt.Errorf("can't parse data: %w", err)
+		return nil, fmt.Errorf("can't parse data: %w", err)
 	}
 
 	return results.Jobs, nil
@@ -82,7 +82,7 @@ func (client RiotGamesJobs) GetItems() ([]RiotGamesJobsEntry, error) {
 
 	entries, err := client.parseData(data)
 	if err != nil {
-		return []RiotGamesJobsEntry{}, err
+		return nil, err
 	}
 
 	results := make([]RiotGamesJobsEntry, len(entries))

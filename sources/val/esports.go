@@ -76,7 +76,7 @@ func (client VALORANTEsports) getContentStackItems(count int) ([]VALORANTEsports
 
 	rawitems, err := contentstack.GetContentStackItems(keys, &params)
 	if err != nil {
-		return []VALORANTEsportsEntry{}, err
+		return nil, err
 	}
 
 	items := make([]VALORANTEsportsEntry, len(rawitems))
@@ -84,7 +84,7 @@ func (client VALORANTEsports) getContentStackItems(count int) ([]VALORANTEsports
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
 		if err != nil {
-			return []VALORANTEsportsEntry{}, fmt.Errorf("can't parse item: %w", err)
+			return nil, fmt.Errorf("can't parse item: %w", err)
 		}
 	}
 
@@ -104,7 +104,7 @@ func (client VALORANTEsports) generateNewsLink(entry VALORANTEsportsEntry) strin
 func (client VALORANTEsports) GetItems(count int) ([]abstract.NewsItem, error) {
 	stackItems, err := client.getContentStackItems(count)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := make([]abstract.NewsItem, len(stackItems))
@@ -114,7 +114,7 @@ func (client VALORANTEsports) GetItems(count int) ([]abstract.NewsItem, error) {
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Authors))

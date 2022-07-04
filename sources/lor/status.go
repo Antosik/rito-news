@@ -34,7 +34,7 @@ func (client LegendsOfRuneterraStatus) generateNewsLink(entry abstract.NewsItem,
 func (client LegendsOfRuneterraStatus) GetItems(locale string) ([]abstract.NewsItem, error) {
 	status, err := client.loadItems()
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := serverstatus.TransformServerStatusToNewsItems(status, locale)
@@ -43,7 +43,7 @@ func (client LegendsOfRuneterraStatus) GetItems(locale string) ([]abstract.NewsI
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(items[i].Url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		items[i].Id = id.String()

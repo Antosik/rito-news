@@ -69,7 +69,7 @@ func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]LeagueOf
 
 	rawitems, err := contentstack.GetContentStackItems(keys, &params)
 	if err != nil {
-		return []LeagueOfLegendsEsportsEntry{}, err
+		return nil, err
 	}
 
 	items := make([]LeagueOfLegendsEsportsEntry, len(rawitems))
@@ -77,7 +77,7 @@ func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]LeagueOf
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
 		if err != nil {
-			return []LeagueOfLegendsEsportsEntry{}, fmt.Errorf("can't parse item: %w", err)
+			return nil, fmt.Errorf("can't parse item: %w", err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (LeagueOfLegendsEsports) generateNewsLink(entry LeagueOfLegendsEsportsEntry
 func (client LeagueOfLegendsEsports) GetItems(count int) ([]abstract.NewsItem, error) {
 	stackItems, err := client.getContentStackItems(count)
 	if err != nil {
-		return []abstract.NewsItem{}, err
+		return nil, err
 	}
 
 	items := make([]abstract.NewsItem, len(stackItems))
@@ -104,7 +104,7 @@ func (client LeagueOfLegendsEsports) GetItems(count int) ([]abstract.NewsItem, e
 
 		id, err := uuid.NewRandomFromReader(strings.NewReader(url))
 		if err != nil {
-			return []abstract.NewsItem{}, fmt.Errorf("can't generate UUID: %w", err)
+			return nil, fmt.Errorf("can't generate UUID: %w", err)
 		}
 
 		authors := make([]string, len(item.Author))
