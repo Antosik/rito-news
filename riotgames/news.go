@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"rito-news/lib/utils"
+	"rito-news/internal/utils"
 	"strings"
 	"time"
 

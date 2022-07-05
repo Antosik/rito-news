@@ -3,7 +3,7 @@ package riotgames
 import (
 	"encoding/json"
 	"fmt"
-	"rito-news/lib/utils"
+	"rito-news/internal/utils"
 	"strings"
 
 	"github.com/go-rod/rod"

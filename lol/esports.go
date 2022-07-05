@@ -3,8 +3,8 @@ package lol
 import (
 	"encoding/json"
 	"fmt"
-	"rito-news/lib/contentstack"
-	"rito-news/lib/utils"
+	"rito-news/internal/contentstack"
+	"rito-news/internal/utils"
 	"time"
 )
 

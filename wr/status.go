@@ -2,7 +2,7 @@ package wr
 
 import (
 	"fmt"
-	"rito-news/lib/serverstatus"
+	"rito-news/internal/serverstatus"
 	"strings"
 )
 
