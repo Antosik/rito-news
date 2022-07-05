@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type LeagueOfLegendsNewsEntry struct {
+type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
 	Categories  []string  `json:"categories"`
@@ -16,16 +16,16 @@ type LeagueOfLegendsNewsEntry struct {
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type leagueOfLegendsNewsAPIResponseEntry struct {
+type rawNewsEntry struct {
 	Node struct {
 		Author []struct {
 			Title string `json:"title"`
 		} `json:"author"`
 		Banner struct {
-			Url string `json:"url"`
+			URL string `json:"url"`
 		} `json:"banner"`
 		Category []struct {
 			Title string `json:"title"`
@@ -35,39 +35,40 @@ type leagueOfLegendsNewsAPIResponseEntry struct {
 		ExternalLink string    `json:"external_link"`
 		Title        string    `json:"title"`
 		UID          string    `json:"uid"`
-		Url          struct {
-			Url string `json:"url"`
+		URL          struct {
+			URL string `json:"url"`
 		} `json:"url"`
 		YouTubeLink string `json:"youtube_link"`
 	} `json:"node"`
 }
 
-type leagueOfLegendsNewsAPIResponse struct {
+type rawNewsResponse struct {
 	Result struct {
 		Data struct {
 			AllArticles struct {
-				Edges []leagueOfLegendsNewsAPIResponseEntry `json:"edges"`
+				Edges []rawNewsEntry `json:"edges"`
 			} `json:"allArticles"`
 		} `json:"data"`
 	} `json:"result"`
 }
 
-type LeagueOfLegendsNews struct {
+type NewsClient struct {
 	Locale string
 }
 
-func (client LeagueOfLegendsNews) loadItems(count int) ([]leagueOfLegendsNewsAPIResponseEntry, error) {
+func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 	url := fmt.Sprintf(
 		"https://www.leagueoflegends.com/page-data/%s/latest-news/page-data.json",
 		client.Locale,
 	)
+
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("can't load news: %w", err)
 	}
 	defer res.Body.Close()
 
-	var response leagueOfLegendsNewsAPIResponse
+	var response rawNewsResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
@@ -75,22 +76,24 @@ func (client LeagueOfLegendsNews) loadItems(count int) ([]leagueOfLegendsNewsAPI
 	return response.Result.Data.AllArticles.Edges[:count], nil
 }
 
-func (client LeagueOfLegendsNews) generateNewsLink(entry leagueOfLegendsNewsAPIResponseEntry) string {
+func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
 	if entry.Node.YouTubeLink != "" {
 		return entry.Node.YouTubeLink
 	}
-	return fmt.Sprintf("https://www.leagueoflegends.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Node.Url.Url))
+
+	return fmt.Sprintf("https://www.leagueoflegends.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Node.URL.URL))
 }
 
-func (client LeagueOfLegendsNews) GetItems(count int) ([]LeagueOfLegendsNewsEntry, error) {
+func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]LeagueOfLegendsNewsEntry, len(items))
+	results := make([]NewsEntry, len(items))
+
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
 		authors := make([]string, len(item.Node.Author))
 		for i, author := range item.Node.Author {
@@ -102,15 +105,15 @@ func (client LeagueOfLegendsNews) GetItems(count int) ([]LeagueOfLegendsNewsEntr
 			categories[i] = category.Title
 		}
 
-		results[i] = LeagueOfLegendsNewsEntry{
+		results[i] = NewsEntry{
 			UID:         item.Node.UID,
 			Authors:     authors,
 			Categories:  categories,
 			Date:        item.Node.Date,
 			Description: item.Node.Description,
-			Image:       item.Node.Banner.Url,
+			Image:       item.Node.Banner.URL,
 			Title:       item.Node.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 

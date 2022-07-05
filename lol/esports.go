@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
-type LeagueOfLegendsEsportsEntry struct {
+type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type leagueOfLegendsEsportsAPIResponseEntry struct {
+type rawEsportsEntry struct {
 	UID    string `json:"uid"`
 	Author []struct {
 		Title string `json:"title"`
@@ -26,23 +26,23 @@ type leagueOfLegendsEsportsAPIResponseEntry struct {
 	Date         time.Time `json:"date"`
 	ExternalLink string    `json:"external_link"`
 	HeaderImage  struct {
-		Url string `json:"url"`
+		URL string `json:"url"`
 	} `json:"header_image"`
 	Intro string `json:"intro"`
 	Title string `json:"title"`
-	Url   string `json:"url"`
+	URL   string `json:"url"`
 }
 
-type LeagueOfLegendsEsports struct {
+type EsportsClient struct {
 	Locale string
 }
 
-func (LeagueOfLegendsEsports) getContentStackKeys(params contentstack.ContentStackQueryParameters) *contentstack.ContentStackKeys {
-	return contentstack.GetContentStackKeys("https://lolesports.com/news", ".News .content-block", &params)
+func (EsportsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
+	return contentstack.GetKeys("https://lolesports.com/news", ".News .content-block", &params)
 }
 
-func (client LeagueOfLegendsEsports) getContentStackParameters(count int) contentstack.ContentStackQueryParameters {
-	return contentstack.ContentStackQueryParameters{
+func (client EsportsClient) getContentStackParameters(count int) contentstack.Parameters {
+	return contentstack.Parameters{
 		ContentType: "articles",
 		Locale:      client.Locale,
 		Count:       count,
@@ -69,16 +69,16 @@ func (client LeagueOfLegendsEsports) getContentStackParameters(count int) conten
 	}
 }
 
-func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]leagueOfLegendsEsportsAPIResponseEntry, error) {
+func (client EsportsClient) getContentStackItems(count int) ([]rawEsportsEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
-	rawitems, err := contentstack.GetContentStackItems(keys, &params)
+	rawitems, err := contentstack.GetItems(keys, &params)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]leagueOfLegendsEsportsAPIResponseEntry, len(rawitems))
+	items := make([]rawEsportsEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -90,36 +90,38 @@ func (client LeagueOfLegendsEsports) getContentStackItems(count int) ([]leagueOf
 	return items, nil
 }
 
-func (LeagueOfLegendsEsports) generateNewsLink(entry leagueOfLegendsEsportsAPIResponseEntry) string {
+func (EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
-	return fmt.Sprintf("https://lolesports.com/%s", utils.TrimSlashes(entry.Url))
+
+	return fmt.Sprintf("https://lolesports.com/%s", utils.TrimSlashes(entry.URL))
 }
 
-func (client LeagueOfLegendsEsports) GetItems(count int) ([]LeagueOfLegendsEsportsEntry, error) {
+func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]LeagueOfLegendsEsportsEntry, len(items))
+	results := make([]EsportsEntry, len(items))
+
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
 			authors[i] = author.Title
 		}
 
-		results[i] = LeagueOfLegendsEsportsEntry{
+		results[i] = EsportsEntry{
 			UID:         item.UID,
 			Authors:     authors,
 			Date:        item.Date,
 			Description: item.Intro,
-			Image:       item.HeaderImage.Url,
+			Image:       item.HeaderImage.URL,
 			Title:       item.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 

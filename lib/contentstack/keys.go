@@ -8,20 +8,21 @@ import (
 	"github.com/go-rod/rod/lib/launcher"
 )
 
-type ContentStackKeys struct {
-	api_key      string
-	access_token string
+type Keys struct {
+	apiKey      string
+	accessToken string
 }
 
-func (keys ContentStackKeys) String() string {
-	return fmt.Sprintf("api_key: %v, access_token: %v", keys.api_key, keys.access_token)
+func (keys Keys) String() string {
+	return fmt.Sprintf("api_key: %v, access_token: %v", keys.apiKey, keys.accessToken)
 }
 
-func GetContentStackKeys(url string, selectorToWait string, params *ContentStackQueryParameters) *ContentStackKeys {
-	var keys ContentStackKeys
+func GetKeys(url string, selectorToWait string, params *Parameters) *Keys {
+	var keys Keys
 
 	path, _ := launcher.LookPath()
 	u := launcher.New().Bin(path).Headless(true).MustLaunch()
+
 	browser := rod.New().ControlURL(u).MustConnect()
 	defer browser.MustClose()
 
@@ -33,14 +34,14 @@ func GetContentStackKeys(url string, selectorToWait string, params *ContentStack
 	router.MustAdd(target, func(ctx *rod.Hijack) {
 		headers := ctx.Request.Headers()
 
-		at, at_ok := headers["access_token"]
-		if at_ok {
-			(&keys).access_token = at.Str()
+		at, atOk := headers["access_token"]
+		if atOk {
+			(&keys).accessToken = at.Str()
 		}
 
-		ak, ak_ok := headers["api_key"]
-		if ak_ok {
-			(&keys).api_key = ak.Str()
+		ak, akOk := headers["api_key"]
+		if akOk {
+			(&keys).apiKey = ak.Str()
 		}
 
 		_ = ctx.LoadResponse(http.DefaultClient, true)

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type WildRiftEsportsEntry struct {
+type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
 	Categories  []string  `json:"categories"`
@@ -16,17 +16,17 @@ type WildRiftEsportsEntry struct {
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type wildRiftEsportsApiResponseEntry struct {
+type rawEsportsEntry struct {
 	UID     string `json:"uid"`
 	Authors []struct {
 		Title string `json:"title"`
 	} `json:"authors"`
 	BannerSettings struct {
 		Banner struct {
-			Url string `json:"url"`
+			URL string `json:"url"`
 		} `json:"banner"`
 	} `json:"banner_settings"`
 	Category []struct {
@@ -36,21 +36,21 @@ type wildRiftEsportsApiResponseEntry struct {
 	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
 	Title        string    `json:"title"`
-	Url          struct {
-		Url string `json:"url"`
+	URL          struct {
+		URL string `json:"url"`
 	} `json:"url"`
 }
 
-type WildRiftEsports struct {
+type EsportsClient struct {
 	Locale string
 }
 
-func (WildRiftEsports) getContentStackKeys(params contentstack.ContentStackQueryParameters) *contentstack.ContentStackKeys {
-	return contentstack.GetContentStackKeys("https://wildriftesports.com/en-us/news", `a[href^="/en-us/news/"]`, &params)
+func (EsportsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
+	return contentstack.GetKeys("https://wildriftesports.com/en-us/news", `a[href^="/en-us/news/"]`, &params)
 }
 
-func (client WildRiftEsports) getContentStackParameters(count int) contentstack.ContentStackQueryParameters {
-	return contentstack.ContentStackQueryParameters{
+func (client EsportsClient) getContentStackParameters(count int) contentstack.Parameters {
+	return contentstack.Parameters{
 		ContentType: "articles",
 		Locale:      client.Locale,
 		Count:       count,
@@ -84,16 +84,16 @@ func (client WildRiftEsports) getContentStackParameters(count int) contentstack.
 	}
 }
 
-func (client WildRiftEsports) getContentStackItems(count int) ([]wildRiftEsportsApiResponseEntry, error) {
+func (client EsportsClient) getContentStackItems(count int) ([]rawEsportsEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
-	rawitems, err := contentstack.GetContentStackItems(keys, &params)
+	rawitems, err := contentstack.GetItems(keys, &params)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]wildRiftEsportsApiResponseEntry, len(rawitems))
+	items := make([]rawEsportsEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -105,23 +105,24 @@ func (client WildRiftEsports) getContentStackItems(count int) ([]wildRiftEsports
 	return items, nil
 }
 
-func (client WildRiftEsports) generateNewsLink(entry wildRiftEsportsApiResponseEntry) string {
+func (client EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
-	return fmt.Sprintf("https://wildriftesports.com/%s/%s", client.Locale, utils.TrimSlashes(entry.Url.Url))
+
+	return fmt.Sprintf("https://wildriftesports.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL.URL))
 }
 
-func (client WildRiftEsports) GetItems(count int) ([]WildRiftEsportsEntry, error) {
+func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]WildRiftEsportsEntry, len(items))
+	results := make([]EsportsEntry, len(items))
 
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
 		authors := make([]string, len(item.Authors))
 		for i, author := range item.Authors {
@@ -133,15 +134,15 @@ func (client WildRiftEsports) GetItems(count int) ([]WildRiftEsportsEntry, error
 			categories[i] = category.Title
 		}
 
-		results[i] = WildRiftEsportsEntry{
+		results[i] = EsportsEntry{
 			UID:         item.UID,
 			Authors:     authors,
 			Categories:  categories,
 			Date:        item.Date,
 			Description: item.Description,
-			Image:       item.BannerSettings.Banner.Url,
+			Image:       item.BannerSettings.Banner.URL,
 			Title:       item.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 

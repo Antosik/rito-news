@@ -8,46 +8,46 @@ import (
 	"time"
 )
 
-type VALORANTEsportsEntry struct {
+type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type valorantEsportsAPIResponseEntry struct {
+type rawEsportsEntry struct {
 	UID     string `json:"uid"`
 	Authors []struct {
 		Title string `json:"title"`
 	} `json:"authors"`
 	BannerSettings struct {
 		Banner struct {
-			Url string `json:"url"`
+			URL string `json:"url"`
 		} `json:"banner"`
 	} `json:"banner_settings"`
 	Date         time.Time `json:"date"`
 	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
 	Title        string    `json:"title"`
-	Url          struct {
-		Url string `json:"url"`
+	URL          struct {
+		URL string `json:"url"`
 	} `json:"url"`
 	VideoLink string `json:"video_link"`
 }
 
-type VALORANTEsports struct {
+type EsportsClient struct {
 	Locale string
 }
 
-func (VALORANTEsports) getContentStackKeys(params contentstack.ContentStackQueryParameters) *contentstack.ContentStackKeys {
-	return contentstack.GetContentStackKeys("https://valorantesports.com/news", "body", &params)
+func (EsportsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
+	return contentstack.GetKeys("https://valorantesports.com/news", "body", &params)
 }
 
-func (client VALORANTEsports) getContentStackParameters(count int) contentstack.ContentStackQueryParameters {
-	return contentstack.ContentStackQueryParameters{
+func (client EsportsClient) getContentStackParameters(count int) contentstack.Parameters {
+	return contentstack.Parameters{
 		ContentType: "articles",
 		Locale:      client.Locale,
 		Count:       count,
@@ -75,16 +75,16 @@ func (client VALORANTEsports) getContentStackParameters(count int) contentstack.
 	}
 }
 
-func (client VALORANTEsports) getContentStackItems(count int) ([]valorantEsportsAPIResponseEntry, error) {
+func (client EsportsClient) getContentStackItems(count int) ([]rawEsportsEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
-	rawitems, err := contentstack.GetContentStackItems(keys, &params)
+	rawitems, err := contentstack.GetItems(keys, &params)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]valorantEsportsAPIResponseEntry, len(rawitems))
+	items := make([]rawEsportsEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -96,40 +96,42 @@ func (client VALORANTEsports) getContentStackItems(count int) ([]valorantEsports
 	return items, nil
 }
 
-func (client VALORANTEsports) generateNewsLink(entry valorantEsportsAPIResponseEntry) string {
+func (client EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
+
 	if entry.VideoLink != "" {
 		return entry.VideoLink
 	}
-	return fmt.Sprintf("https://valorantesports.com/%s/%s", utils.TrimSlashes(entry.Url.Url), client.Locale)
+
+	return fmt.Sprintf("https://valorantesports.com/%s/%s", utils.TrimSlashes(entry.URL.URL), client.Locale)
 }
 
-func (client VALORANTEsports) GetItems(count int) ([]VALORANTEsportsEntry, error) {
+func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]VALORANTEsportsEntry, len(items))
+	results := make([]EsportsEntry, len(items))
 
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
 		authors := make([]string, len(item.Authors))
 		for i, author := range item.Authors {
 			authors[i] = author.Title
 		}
 
-		results[i] = VALORANTEsportsEntry{
+		results[i] = EsportsEntry{
 			UID:         item.UID,
 			Authors:     authors,
 			Date:        item.Date,
 			Description: item.Description,
-			Image:       item.BannerSettings.Banner.Url,
+			Image:       item.BannerSettings.Banner.URL,
 			Title:       item.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 

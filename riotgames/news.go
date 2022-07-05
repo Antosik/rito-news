@@ -12,20 +12,20 @@ import (
 	"github.com/go-rod/rod"
 )
 
-type RiotGamesNewsEntry struct {
+type NewsEntry struct {
 	Category    string    `json:"category"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type RiotGamesNews struct {
+type NewsClient struct {
 	Locale string
 }
 
-func (client RiotGamesNews) initialLoad() ([]string, string) {
+func (client NewsClient) initialLoad() ([]string, string) {
 	browser := rod.New().MustConnect()
 	defer browser.MustClose()
 
@@ -36,11 +36,14 @@ func (client RiotGamesNews) initialLoad() ([]string, string) {
 	if !strings.Contains(link, "https://www.riotgames.com") {
 		link = "https://www.riotgames.com" + link
 	}
+
 	page.MustNavigate(link)
 
-	ids := page.MustElement(".js-load-more").MustAttribute("data-load-more-ids")
+	var (
+		ids  = page.MustElement(".js-load-more").MustAttribute("data-load-more-ids")
+		news = page.MustElements(".js-explore-hero-wrapper .content-center, .widget__wrapper--maxigrid .grid__item")
+	)
 
-	news := page.MustElements(".js-explore-hero-wrapper .content-center, .widget__wrapper--maxigrid .grid__item")
 	newsHTML := make([]string, len(news))
 	for i, newsItem := range news {
 		newsHTML[i], _ = newsItem.HTML()
@@ -49,12 +52,13 @@ func (client RiotGamesNews) initialLoad() ([]string, string) {
 	return strings.Split(*ids, ","), strings.Join(newsHTML, "")
 }
 
-func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
+func (client NewsClient) loadNewsWithIds(ids []string) (string, error) {
+	widget := fmt.Sprintf(`{"loadMorePageSize":%d,"loadMoreMethod":"button"}`, len(ids))
 	url := fmt.Sprintf(
-		`https://www.riotgames.com/%s/api/load-more/maxi-grid?ids=%s&widget={"loadMorePageSize":%d,"loadMoreMethod":"button"}`,
+		`https://www.riotgames.com/%s/api/load-more/maxi-grid?ids=%s&widget=%s`,
 		client.Locale,
 		strings.Join(ids, ","),
-		len(ids),
+		widget,
 	)
 
 	res, err := http.Get(url)
@@ -62,7 +66,7 @@ func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
 		return "", fmt.Errorf("can't load more news: %w", err)
 	}
 
-	body, _ := io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", fmt.Errorf("can't parse news body: %w", err)
 	}
@@ -70,14 +74,14 @@ func (client RiotGamesNews) loadNewsWithIds(ids []string) (string, error) {
 	return strings.ReplaceAll(string(body), `\"`, `"`), nil
 }
 
-func (RiotGamesNews) extractNewsFromHTML(html string) ([]RiotGamesNewsEntry, error) {
+func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("can't read news content: %w", err)
 	}
 
 	items := doc.Find(".summary")
-	news := make([]RiotGamesNewsEntry, items.Size())
+	news := make([]NewsEntry, items.Size())
 
 	for i := range items.Nodes {
 		el := items.Eq(i)
@@ -88,6 +92,7 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]RiotGamesNewsEntry, err
 			date time.Time
 			err  error
 		)
+
 		date, err = time.Parse("02/01/2006", dateStr)
 		if err != nil {
 			date, err = time.Parse("Jan 2, 2006", dateStr)
@@ -101,20 +106,20 @@ func (RiotGamesNews) extractNewsFromHTML(html string) ([]RiotGamesNewsEntry, err
 			url = "https://www.riotgames.com/" + utils.TrimSlashes(url)
 		}
 
-		news[i] = RiotGamesNewsEntry{
+		news[i] = NewsEntry{
 			Category:    el.Find(".eyebrow span").Text(),
 			Date:        date,
 			Description: el.Find(".summary__sell").Text(),
 			Image:       el.Find("img").AttrOr("src", ""),
 			Title:       el.Find("h3 span").Text(),
-			Url:         url,
+			URL:         url,
 		}
 	}
 
 	return news, nil
 }
 
-func (client RiotGamesNews) GetItems(count int) ([]RiotGamesNewsEntry, error) {
+func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	ids, initialsNews := client.initialLoad()
 
 	items, err := client.extractNewsFromHTML(initialsNews)

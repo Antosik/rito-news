@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type LegendsOfRuneterraNewsEntry struct {
+type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
 	Categories  []string  `json:"categories"`
@@ -17,10 +17,10 @@ type LegendsOfRuneterraNewsEntry struct {
 	Image       string    `json:"image"`
 	Tags        []string  `json:"tags"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type legendsOfRuneterraNewsAPIResponseEntry struct {
+type rawNewsEntry struct {
 	UID         string `json:"uid"`
 	ArticleTags []struct {
 		Title string `json:"title"`
@@ -32,27 +32,27 @@ type legendsOfRuneterraNewsAPIResponseEntry struct {
 		Title string `json:"title"`
 	} `json:"category"`
 	CoverImage struct {
-		Url string `json:"url"`
+		URL string `json:"url"`
 	} `json:"cover_image"`
 	Date         time.Time `json:"date"`
 	ExternalLink string    `json:"external_link"`
 	Title        string    `json:"title"`
 	Summary      string    `json:"summary"`
-	Url          struct {
-		Url string `json:"url"`
+	URL          struct {
+		URL string `json:"url"`
 	} `json:"url"`
 }
 
-type LegendsOfRuneterraNews struct {
+type NewsClient struct {
 	Locale string
 }
 
-func (LegendsOfRuneterraNews) getContentStackKeys(params contentstack.ContentStackQueryParameters) *contentstack.ContentStackKeys {
-	return contentstack.GetContentStackKeys("https://playruneterra.com/en-us/news/", ".page ul li", &params)
+func (NewsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
+	return contentstack.GetKeys("https://playruneterra.com/en-us/news/", ".page ul li", &params)
 }
 
-func (client LegendsOfRuneterraNews) getContentStackParameters(count int) contentstack.ContentStackQueryParameters {
-	return contentstack.ContentStackQueryParameters{
+func (client NewsClient) getContentStackParameters(count int) contentstack.Parameters {
+	return contentstack.Parameters{
 		ContentType: "news_2",
 		Locale:      client.Locale,
 		Count:       count,
@@ -94,16 +94,16 @@ func (client LegendsOfRuneterraNews) getContentStackParameters(count int) conten
 	}
 }
 
-func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]legendsOfRuneterraNewsAPIResponseEntry, error) {
+func (client NewsClient) getContentStackItems(count int) ([]rawNewsEntry, error) {
 	params := client.getContentStackParameters(count)
 	keys := client.getContentStackKeys(params)
 
-	rawitems, err := contentstack.GetContentStackItems(keys, &params)
+	rawitems, err := contentstack.GetItems(keys, &params)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]legendsOfRuneterraNewsAPIResponseEntry, len(rawitems))
+	items := make([]rawNewsEntry, len(rawitems))
 
 	for i, raw := range rawitems {
 		err := json.Unmarshal(raw, &items[i])
@@ -115,23 +115,24 @@ func (client LegendsOfRuneterraNews) getContentStackItems(count int) ([]legendsO
 	return items, nil
 }
 
-func (client LegendsOfRuneterraNews) generateNewsLink(entry legendsOfRuneterraNewsAPIResponseEntry) string {
+func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
-	return fmt.Sprintf("https://playruneterra.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Url.Url))
+
+	return fmt.Sprintf("https://playruneterra.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.URL.URL))
 }
 
-func (client LegendsOfRuneterraNews) GetItems(count int) ([]LegendsOfRuneterraNewsEntry, error) {
+func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	items, err := client.getContentStackItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]LegendsOfRuneterraNewsEntry, len(items))
+	results := make([]NewsEntry, len(items))
 
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
@@ -148,16 +149,16 @@ func (client LegendsOfRuneterraNews) GetItems(count int) ([]LegendsOfRuneterraNe
 			tags[i] = tag.Title
 		}
 
-		results[i] = LegendsOfRuneterraNewsEntry{
+		results[i] = NewsEntry{
 			UID:         item.UID,
 			Authors:     authors,
 			Categories:  categories,
 			Date:        item.Date,
 			Description: item.Summary,
-			Image:       item.CoverImage.Url,
+			Image:       item.CoverImage.URL,
 			Tags:        tags,
 			Title:       item.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 

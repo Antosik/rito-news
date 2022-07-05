@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type ContentStackQueryParameters struct {
+type Parameters struct {
 	ContentType string
 	Locale      string
 	Count       int
@@ -16,12 +16,12 @@ type ContentStackQueryParameters struct {
 	Filters     map[string][]string
 }
 
-func GetContentStackItems(keys *ContentStackKeys, parameters *ContentStackQueryParameters) ([]json.RawMessage, error) {
-	if keys.access_token == "" || keys.api_key == "" {
-		return nil, fmt.Errorf("incorrect api keys: " + keys.String())
+func GetItems(keys *Keys, parameters *Parameters) ([]json.RawMessage, error) {
+	if keys.accessToken == "" || keys.apiKey == "" {
+		return nil, fmt.Errorf("incorrect api keys: %s", keys.String())
 	}
 
-	url := generateContentStackUrl(parameters)
+	url := generateURL(parameters)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -29,10 +29,11 @@ func GetContentStackItems(keys *ContentStackKeys, parameters *ContentStackQueryP
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("api_key", keys.api_key)
-	req.Header.Set("access_token", keys.access_token)
+	req.Header.Set("api_key", keys.apiKey)
+	req.Header.Set("access_token", keys.accessToken)
 
 	client := &http.Client{}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unsuccessful request: %w", err)
@@ -49,7 +50,7 @@ func GetContentStackItems(keys *ContentStackKeys, parameters *ContentStackQueryP
 	return response.Entries, nil
 }
 
-func generateContentStackUrl(parameters *ContentStackQueryParameters) string {
+func generateURL(parameters *Parameters) string {
 	var query []string
 
 	for key, values := range parameters.Filters {
@@ -58,7 +59,8 @@ func generateContentStackUrl(parameters *ContentStackQueryParameters) string {
 		}
 	}
 
-	return fmt.Sprintf(`https://cdn.contentstack.io/v3/content_types/%s/entries/?locale=%s&environment=%s&limit=%d&desc=date&%v`,
+	return fmt.Sprintf(
+		`https://cdn.contentstack.io/v3/content_types/%s/entries/?locale=%s&environment=%s&limit=%d&desc=date&%v`,
 		parameters.ContentType,
 		parameters.Locale,
 		parameters.Environment,

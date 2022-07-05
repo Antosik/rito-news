@@ -3,7 +3,8 @@ package val
 import "fmt"
 
 func Example_news() {
-	client := VALORANTNews{Locale: "ru-ru"}
+	client := NewsClient{Locale: "ru-ru"}
+
 	entries, _ := client.GetItems(1)
 	for _, entry := range entries {
 		fmt.Println(entry)
@@ -11,7 +12,8 @@ func Example_news() {
 }
 
 func Example_esportsNews() {
-	client := VALORANTEsports{Locale: "ru-ru"}
+	client := EsportsClient{Locale: "ru-ru"}
+
 	entries, _ := client.GetItems(1)
 	for _, entry := range entries {
 		fmt.Println(entry)
@@ -19,7 +21,8 @@ func Example_esportsNews() {
 }
 
 func Example_serverStatus() {
-	client := VALORANTStatus{Region: "br"}
+	client := StatusClient{Region: "br"}
+
 	entries, _ := client.GetItems("ru-RU")
 	for _, entry := range entries {
 		fmt.Println(entry)

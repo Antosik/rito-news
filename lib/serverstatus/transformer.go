@@ -5,12 +5,15 @@ import (
 	"strings"
 )
 
-func getLocaleFromServerStatusEntryTranslations(translations []serverStatusEntryAPITranslation, locale string) string {
-	var fallback string
-	var result string
+func getLocaleFromRawTranslationEntry(translations []rawTranslationEntry, locale string) string {
+	var (
+		fallback string
+		result   string
+	)
 
 	for _, translation := range translations {
-		if strings.EqualFold(translation.Locale, locale) || strings.EqualFold(translation.Locale, strings.ReplaceAll(locale, "-", "_")) {
+		if strings.EqualFold(translation.Locale, locale) ||
+			strings.EqualFold(translation.Locale, strings.ReplaceAll(locale, "-", "_")) {
 			result = translation.Content
 			break
 		}
@@ -27,20 +30,20 @@ func getLocaleFromServerStatusEntryTranslations(translations []serverStatusEntry
 	return fallback
 }
 
-func transformServerStatusEntryToNewsItems(status serverStatusAPIEntry, locale string) []ServerStatusEntry {
-	items := make([]ServerStatusEntry, 0, len(status.Updates))
+func transformRawEntryToEntry(status rawEntry, locale string) []Entry {
+	items := make([]Entry, 0, len(status.Updates))
 
-	title := getLocaleFromServerStatusEntryTranslations(status.Titles, locale)
+	title := getLocaleFromRawTranslationEntry(status.Titles, locale)
 
 	for _, update := range status.Updates {
 		if !update.Publish {
 			continue
 		}
 
-		items = append(items, ServerStatusEntry{
-			UID:         strconv.Itoa(update.Id),
+		items = append(items, Entry{
+			UID:         strconv.Itoa(update.ID),
 			Title:       title,
-			Description: getLocaleFromServerStatusEntryTranslations(update.Translations, locale),
+			Description: getLocaleFromRawTranslationEntry(update.Translations, locale),
 			Author:      update.Author,
 			Date:        update.CreatedAt,
 		})
@@ -49,15 +52,15 @@ func transformServerStatusEntryToNewsItems(status serverStatusAPIEntry, locale s
 	return items
 }
 
-func TransformServerStatusToNewsItems(status serverStatusAPIResponse, locale string) []ServerStatusEntry {
-	statuses := make([]serverStatusAPIEntry, 0, len(status.Incidents)+len(status.Maintenances))
+func transformRawResponseToEntry(status rawResponse, locale string) []Entry {
+	statuses := make([]rawEntry, 0, len(status.Incidents)+len(status.Maintenances))
 	statuses = append(statuses, status.Incidents...)
 	statuses = append(statuses, status.Maintenances...)
 
-	var items []ServerStatusEntry
+	var items []Entry
 
 	for _, entry := range statuses {
-		items = append(items, transformServerStatusEntryToNewsItems(entry, locale)...)
+		items = append(items, transformRawEntryToEntry(entry, locale)...)
 	}
 
 	return items

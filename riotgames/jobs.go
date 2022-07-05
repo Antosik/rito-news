@@ -9,46 +9,46 @@ import (
 	"github.com/go-rod/rod"
 )
 
-type RiotGamesJobsEntryOffice struct {
-	Id   string `json:"id"`
+type JobsOfficeEntry struct {
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	More string `json:"more"`
-	Url  string `json:"url"`
+	URL  string `json:"url"`
 }
 
-type RiotGamesJobsEntryCraft struct {
-	Id   string `json:"id"`
+type JobsCraftEntry struct {
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	More string `json:"more"`
 }
 
-type RiotGamesJobsEntry struct {
-	Craft    RiotGamesJobsEntryCraft  `json:"craft"`
-	Office   RiotGamesJobsEntryOffice `json:"office"`
-	Products string                   `json:"products"`
-	Title    string                   `json:"title"`
-	Url      string                   `json:"url"`
+type JobsEntry struct {
+	Craft    JobsCraftEntry  `json:"craft"`
+	Office   JobsOfficeEntry `json:"office"`
+	Products string          `json:"products"`
+	Title    string          `json:"title"`
+	URL      string          `json:"url"`
 }
 
-type riotGamesJobsResponseAPIResponseEntry struct {
+type rawJobsEntry struct {
 	Craft    string `json:"craft"`
-	CraftId  string `json:"craftId"`
+	CraftID  string `json:"craftId"`
 	Office   string `json:"office"`
-	OfficeId string `json:"officeId"`
+	OfficeID string `json:"officeId"`
 	Products string `json:"products"`
 	Title    string `json:"title"`
-	Url      string `json:"url"`
+	URL      string `json:"url"`
 }
 
-type riotGamesJobsResponseAPIResponse struct {
-	Jobs []riotGamesJobsResponseAPIResponseEntry `json:"jobs"`
+type rawJobsResponse struct {
+	Jobs []rawJobsEntry `json:"jobs"`
 }
 
-type RiotGamesJobs struct {
+type JobsClient struct {
 	Locale string
 }
 
-func (client RiotGamesJobs) loadData() (string, string) {
+func (client JobsClient) loadData() (string, string) {
 	browser := rod.New().MustConnect()
 	defer browser.MustClose()
 
@@ -59,6 +59,7 @@ func (client RiotGamesJobs) loadData() (string, string) {
 	if !strings.Contains(link, "https://www.riotgames.com") {
 		link = "https://www.riotgames.com" + utils.TrimSlashes(link)
 	}
+
 	page.MustNavigate(link)
 
 	data := page.MustElement(".js-job-list-wrapper").MustAttribute("data-props")
@@ -66,8 +67,8 @@ func (client RiotGamesJobs) loadData() (string, string) {
 	return *data, link
 }
 
-func (client RiotGamesJobs) parseData(data string) ([]riotGamesJobsResponseAPIResponseEntry, error) {
-	var results riotGamesJobsResponseAPIResponse
+func (client JobsClient) parseData(data string) ([]rawJobsEntry, error) {
+	var results rawJobsResponse
 
 	err := json.Unmarshal([]byte(data), &results)
 	if err != nil {
@@ -77,7 +78,7 @@ func (client RiotGamesJobs) parseData(data string) ([]riotGamesJobsResponseAPIRe
 	return results.Jobs, nil
 }
 
-func (client RiotGamesJobs) GetItems() ([]RiotGamesJobsEntry, error) {
+func (client JobsClient) GetItems() ([]JobsEntry, error) {
 	data, link := client.loadData()
 
 	items, err := client.parseData(data)
@@ -85,23 +86,23 @@ func (client RiotGamesJobs) GetItems() ([]RiotGamesJobsEntry, error) {
 		return nil, err
 	}
 
-	results := make([]RiotGamesJobsEntry, len(items))
+	results := make([]JobsEntry, len(items))
 	for i, entry := range items {
-		results[i] = RiotGamesJobsEntry{
-			Craft: RiotGamesJobsEntryCraft{
-				Id:   entry.CraftId,
+		results[i] = JobsEntry{
+			Craft: JobsCraftEntry{
+				ID:   entry.CraftID,
 				Name: entry.Craft,
-				More: fmt.Sprintf("%s#craft=%s", link, entry.CraftId),
+				More: fmt.Sprintf("%s#craft=%s", link, entry.CraftID),
 			},
-			Office: RiotGamesJobsEntryOffice{
-				Id:   entry.OfficeId,
+			Office: JobsOfficeEntry{
+				ID:   entry.OfficeID,
 				Name: entry.Office,
-				More: fmt.Sprintf("%s#office=%s", link, entry.OfficeId),
-				Url:  fmt.Sprintf("https://www.riotgames.com/%s/o/%s", client.Locale, entry.OfficeId),
+				More: fmt.Sprintf("%s#office=%s", link, entry.OfficeID),
+				URL:  fmt.Sprintf("https://www.riotgames.com/%s/o/%s", client.Locale, entry.OfficeID),
 			},
 			Products: entry.Products,
 			Title:    entry.Title,
-			Url:      fmt.Sprintf("https://www.riotgames.com/%s/%s", client.Locale, utils.TrimSlashes(entry.Url)),
+			URL:      fmt.Sprintf("https://www.riotgames.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL)),
 		}
 	}
 

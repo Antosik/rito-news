@@ -8,55 +8,56 @@ import (
 	"time"
 )
 
-type VALORANTNewsEntry struct {
+type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type valorantNewsAPIResponseEntry struct {
+type rawNewsEntry struct {
 	UID    string `json:"uid"`
 	Banner struct {
-		Url string `json:"url"`
+		URL string `json:"url"`
 	} `json:"banner"`
 	Date         time.Time `json:"date"`
 	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
 	Title        string    `json:"title"`
-	Url          struct {
-		Url string `json:"url"`
+	URL          struct {
+		URL string `json:"url"`
 	} `json:"url"`
 }
 
-type valorantNewsAPIResponse struct {
+type rawNewsResponse struct {
 	Result struct {
 		Data struct {
 			AllContentstackArticles struct {
-				Nodes []valorantNewsAPIResponseEntry `json:"nodes"`
+				Nodes []rawNewsEntry `json:"nodes"`
 			} `json:"allContentstackArticles"`
 		} `json:"data"`
 	} `json:"result"`
 }
 
-type VALORANTNews struct {
+type NewsClient struct {
 	Locale string
 }
 
-func (client VALORANTNews) loadItems(count int) ([]valorantNewsAPIResponseEntry, error) {
+func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 	url := fmt.Sprintf(
 		"https://playvalorant.com/page-data/%s/news/page-data.json",
 		client.Locale,
 	)
+
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("can't load news: %w", err)
 	}
 	defer res.Body.Close()
 
-	var response valorantNewsAPIResponse
+	var response rawNewsResponse
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
@@ -64,31 +65,32 @@ func (client VALORANTNews) loadItems(count int) ([]valorantNewsAPIResponseEntry,
 	return response.Result.Data.AllContentstackArticles.Nodes[:count], nil
 }
 
-func (client VALORANTNews) generateNewsLink(entry valorantNewsAPIResponseEntry) string {
+func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
-	return fmt.Sprintf("https://playvalorant.com/%s/%s", client.Locale, utils.TrimSlashes(entry.Url.Url))
+
+	return fmt.Sprintf("https://playvalorant.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL.URL))
 }
 
-func (client VALORANTNews) GetItems(count int) ([]VALORANTNewsEntry, error) {
+func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]VALORANTNewsEntry, len(items))
+	results := make([]NewsEntry, len(items))
 
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
-		results[i] = VALORANTNewsEntry{
+		results[i] = NewsEntry{
 			UID:         item.UID,
 			Date:        item.Date,
 			Description: item.Description,
-			Image:       item.Banner.Url,
+			Image:       item.Banner.URL,
 			Title:       item.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 

@@ -7,40 +7,40 @@ import (
 	"time"
 )
 
-type ServerStatusEntry struct {
+type Entry struct {
 	UID         string    `json:"uid"`
 	Author      string    `json:"author"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type serverStatusEntryAPITranslation struct {
+type rawTranslationEntry struct {
 	Content string `json:"content"`
 	Locale  string `json:"locale"`
 }
 
-type serverStatusEntryAPIUpdate struct {
-	UpdatedAt    time.Time                         `json:"updated_at"`
-	Publish      bool                              `json:"publish"`
-	Translations []serverStatusEntryAPITranslation `json:"translations"`
-	CreatedAt    time.Time                         `json:"created_at"`
-	Author       string                            `json:"author"`
-	Id           int                               `json:"id"`
+type rawUpdateEntry struct {
+	UpdatedAt    time.Time             `json:"updated_at"`
+	Publish      bool                  `json:"publish"`
+	Translations []rawTranslationEntry `json:"translations"`
+	CreatedAt    time.Time             `json:"created_at"`
+	Author       string                `json:"author"`
+	ID           int                   `json:"id"`
 }
 
-type serverStatusAPIEntry struct {
-	Titles  []serverStatusEntryAPITranslation `json:"titles"`
-	Updates []serverStatusEntryAPIUpdate      `json:"updates"`
+type rawEntry struct {
+	Titles  []rawTranslationEntry `json:"titles"`
+	Updates []rawUpdateEntry      `json:"updates"`
 }
 
-type serverStatusAPIResponse struct {
-	Maintenances []serverStatusAPIEntry `json:"maintenances"`
-	Incidents    []serverStatusAPIEntry `json:"incidents"`
+type rawResponse struct {
+	Maintenances []rawEntry `json:"maintenances"`
+	Incidents    []rawEntry `json:"incidents"`
 }
 
-func GetServerStatusItems(url string, locale string) ([]ServerStatusEntry, error) {
+func GetItems(url string, locale string) ([]Entry, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("can't create request: %w", err)
@@ -49,16 +49,17 @@ func GetServerStatusItems(url string, locale string) ([]ServerStatusEntry, error
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unsuccessful request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var response serverStatusAPIResponse
+	var response rawResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	return TransformServerStatusToNewsItems(response, locale), nil
+	return transformRawResponseToEntry(response, locale), nil
 }

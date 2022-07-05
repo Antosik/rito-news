@@ -6,19 +6,20 @@ import (
 	"strings"
 )
 
-type VALORANTStatus struct {
+type StatusClient struct {
 	Region string
 }
 
-func (client VALORANTStatus) loadItems(locale string) ([]serverstatus.ServerStatusEntry, error) {
+func (client StatusClient) loadItems(locale string) ([]serverstatus.Entry, error) {
 	url := fmt.Sprintf(
 		"https://valorant.secure.dyn.riotcdn.net/channels/public/x/status/%s.json",
 		client.Region,
 	)
-	return serverstatus.GetServerStatusItems(url, locale)
+
+	return serverstatus.GetItems(url, locale)
 }
 
-func (client VALORANTStatus) generateNewsLink(entry serverstatus.ServerStatusEntry, locale string) string {
+func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale string) string {
 	return fmt.Sprintf(
 		"https://status.riotgames.com/valorant?region=%s&locale=%s&id=%s",
 		client.Region,
@@ -27,14 +28,14 @@ func (client VALORANTStatus) generateNewsLink(entry serverstatus.ServerStatusEnt
 	)
 }
 
-func (client VALORANTStatus) GetItems(locale string) ([]serverstatus.ServerStatusEntry, error) {
+func (client StatusClient) GetItems(locale string) ([]serverstatus.Entry, error) {
 	items, err := client.loadItems(locale)
 	if err != nil {
 		return nil, err
 	}
 
 	for i := range items {
-		items[i].Url = client.generateNewsLink(items[i], locale)
+		items[i].URL = client.getLinkForEntry(items[i], locale)
 	}
 
 	return items, nil

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type TeamfightTacticsNewsEntry struct {
+type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
 	Categories  []string  `json:"categories"`
@@ -16,16 +16,16 @@ type TeamfightTacticsNewsEntry struct {
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
 	Title       string    `json:"title"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 }
 
-type teamfightTacticsNewsAPIResponseEntry struct {
+type rawNewsEntry struct {
 	UID    string `json:"uid"`
 	Author []struct {
 		Title string `json:"title"`
 	} `json:"author"`
 	Banner struct {
-		Url string `json:"url"`
+		URL string `json:"url"`
 	} `json:"banner"`
 	Category []struct {
 		Title string `json:"title"`
@@ -34,8 +34,8 @@ type teamfightTacticsNewsAPIResponseEntry struct {
 	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
 	Title        string    `json:"title"`
-	Url          struct {
-		Url string `json:"url"`
+	URL          struct {
+		URL string `json:"url"`
 	} `json:"url"`
 	YouTubeLink string `json:"youtube_link"`
 }
@@ -46,7 +46,7 @@ type teamfightTacticsNewsAPIResponse struct {
 			All struct {
 				Edges []struct {
 					Node struct {
-						Entries []teamfightTacticsNewsAPIResponseEntry `json:"entries"`
+						Entries []rawNewsEntry `json:"entries"`
 					} `json:"node"`
 				} `json:"edges"`
 			} `json:"all"`
@@ -54,15 +54,16 @@ type teamfightTacticsNewsAPIResponse struct {
 	} `json:"result"`
 }
 
-type TeamfightTacticsNews struct {
+type NewsClient struct {
 	Locale string
 }
 
-func (client TeamfightTacticsNews) loadItems(count int) ([]teamfightTacticsNewsAPIResponseEntry, error) {
+func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 	url := fmt.Sprintf(
 		"https://teamfighttactics.leagueoflegends.com/page-data/%s/news/page-data.json",
 		client.Locale,
 	)
+
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("can't load news: %w", err)
@@ -77,26 +78,32 @@ func (client TeamfightTacticsNews) loadItems(count int) ([]teamfightTacticsNewsA
 	return response.Result.Data.All.Edges[0].Node.Entries[:count], nil
 }
 
-func (client TeamfightTacticsNews) generateNewsLink(entry teamfightTacticsNewsAPIResponseEntry) string {
+func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
 	if entry.ExternalLink != "" {
 		return entry.ExternalLink
 	}
+
 	if entry.YouTubeLink != "" {
 		return entry.YouTubeLink
 	}
-	return fmt.Sprintf("https://teamfighttactics.leagueoflegends.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Url.Url))
+
+	return fmt.Sprintf(
+		"https://teamfighttactics.leagueoflegends.com/%s/%s/",
+		client.Locale,
+		utils.TrimSlashes(entry.URL.URL),
+	)
 }
 
-func (client TeamfightTacticsNews) GetItems(count int) ([]TeamfightTacticsNewsEntry, error) {
+func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]TeamfightTacticsNewsEntry, len(items))
+	results := make([]NewsEntry, len(items))
 
 	for i, item := range items {
-		url := client.generateNewsLink(item)
+		url := client.getLinkForEntry(item)
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
@@ -108,15 +115,15 @@ func (client TeamfightTacticsNews) GetItems(count int) ([]TeamfightTacticsNewsEn
 			categories[i] = category.Title
 		}
 
-		results[i] = TeamfightTacticsNewsEntry{
+		results[i] = NewsEntry{
 			UID:         item.UID,
 			Authors:     authors,
 			Categories:  categories,
 			Date:        item.Date,
 			Description: item.Description,
-			Image:       item.Banner.Url,
+			Image:       item.Banner.URL,
 			Title:       item.Title,
-			Url:         url,
+			URL:         url,
 		}
 	}
 
