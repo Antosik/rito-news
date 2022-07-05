@@ -3,9 +3,10 @@ package lol
 import (
 	"encoding/json"
 	"fmt"
-	"rito-news/internal/contentstack"
-	"rito-news/internal/utils"
 	"time"
+
+	"github.com/Antosik/rito-news/internal/contentstack"
+	"github.com/Antosik/rito-news/internal/utils"
 )
 
 type EsportsEntry struct {

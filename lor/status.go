@@ -2,8 +2,9 @@ package lor
 
 import (
 	"fmt"
-	"rito-news/internal/serverstatus"
 	"strings"
+
+	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
 type StatusClient struct {

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"rito-news/internal/utils"
 	"time"
+
+	"github.com/Antosik/rito-news/internal/utils"
 )
 
 type NewsEntry struct {

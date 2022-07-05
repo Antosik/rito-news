@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"rito-news/internal/utils"
 	"strings"
 	"time"
+
+	"github.com/Antosik/rito-news/internal/utils"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"

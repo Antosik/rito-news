@@ -1,4 +1,4 @@
-module rito-news
+module github.com/Antosik/rito-news
 
 go 1.18
 
