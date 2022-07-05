@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
@@ -117,6 +118,10 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 			URL:         url,
 		}
 	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Date.Before(results[j].Date)
+	})
 
 	return results, nil
 }

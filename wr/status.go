@@ -2,6 +2,7 @@ package wr
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/Antosik/rito-news/internal/serverstatus"
@@ -38,6 +39,10 @@ func (client StatusClient) GetItems(locale string) ([]serverstatus.Entry, error)
 	for i := range items {
 		items[i].URL = client.getLinkForEntry(items[i], locale)
 	}
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Date.Before(items[j].Date)
+	})
 
 	return items, nil
 }

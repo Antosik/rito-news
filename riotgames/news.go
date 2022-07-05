@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -148,6 +149,10 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	} else {
 		items = items[:count]
 	}
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Date.Before(items[j].Date)
+	})
 
 	return items, nil
 }

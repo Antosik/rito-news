@@ -3,6 +3,7 @@ package val
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/Antosik/rito-news/internal/contentstack"
@@ -135,6 +136,10 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 			URL:         url,
 		}
 	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Date.Before(results[j].Date)
+	})
 
 	return results, nil
 }
