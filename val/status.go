@@ -8,6 +8,8 @@ import (
 	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
+type StatusEntry serverstatus.Entry
+
 type StatusClient struct {
 	Region string
 }
@@ -30,19 +32,27 @@ func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale stri
 	)
 }
 
-func (client StatusClient) GetItems(locale string) ([]serverstatus.Entry, error) {
+func (client StatusClient) GetItems(locale string) ([]StatusEntry, error) {
 	items, err := client.loadItems(locale)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range items {
-		items[i].URL = client.getLinkForEntry(items[i], locale)
+	results := make([]StatusEntry, len(items))
+	for i, item := range items {
+		results[i] = StatusEntry{
+			UID:         item.UID,
+			Author:      item.Author,
+			Date:        item.Date,
+			Description: item.Description,
+			Title:       item.Title,
+			URL:         client.getLinkForEntry(items[i], locale),
+		}
 	}
 
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].Date.Before(items[j].Date)
 	})
 
-	return items, nil
+	return results, nil
 }
