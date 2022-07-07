@@ -130,10 +130,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	}
 
 	if count > len(items) {
-		idsToLoadCount := count - len(items)
-		if len(ids) < idsToLoadCount {
-			idsToLoadCount = len(ids)
-		}
+		idsToLoadCount := utils.MinInt(count-len(items), len(ids))
 
 		news, err := client.loadNewsWithIds(ids[:idsToLoadCount])
 		if err != nil {

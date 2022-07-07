@@ -64,7 +64,10 @@ func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	return response.Result.Data.AllContentstackArticles.Nodes[:count], nil
+	nodes := response.Result.Data.AllContentstackArticles.Nodes
+	sliceSize := utils.MinInt(count, len(nodes))
+
+	return nodes[:sliceSize], nil
 }
 
 func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
