@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/Antosik/rito-news/internal/utils"
 )
 
 type Parameters struct {
@@ -23,12 +25,11 @@ func GetItems(keys *Keys, parameters *Parameters) ([]json.RawMessage, error) {
 
 	url := generateURL(parameters)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := utils.NewGETJSONRequest(url)
 	if err != nil {
-		return nil, fmt.Errorf("can't create request: %w", err)
+		return nil, err
 	}
 
-	req.Header.Set("Accept", "application/json")
 	req.Header.Set("api_key", keys.apiKey)
 	req.Header.Set("access_token", keys.accessToken)
 

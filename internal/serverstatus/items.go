@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/Antosik/rito-news/internal/utils"
 )
 
 type Entry struct {
@@ -41,12 +43,10 @@ type rawResponse struct {
 }
 
 func GetItems(url string, locale string) ([]Entry, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := utils.NewGETJSONRequest(url)
 	if err != nil {
-		return nil, fmt.Errorf("can't create request: %w", err)
+		return nil, err
 	}
-
-	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{}
 

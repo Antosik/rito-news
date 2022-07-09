@@ -53,7 +53,14 @@ func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 		client.Locale,
 	)
 
-	res, err := http.Get(url)
+	req, err := utils.NewGETJSONRequest(url)
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient := &http.Client{}
+
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("can't load news: %w", err)
 	}

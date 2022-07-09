@@ -63,7 +63,14 @@ func (client NewsClient) loadNewsWithIds(ids []string) (string, error) {
 		widget,
 	)
 
-	res, err := http.Get(url)
+	req, err := utils.NewGETJSONRequest(url)
+	if err != nil {
+		return "", err
+	}
+
+	httpClient := &http.Client{}
+
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("can't load more news: %w", err)
 	}
