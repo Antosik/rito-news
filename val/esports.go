@@ -45,7 +45,7 @@ type EsportsClient struct {
 }
 
 func (EsportsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
-	return contentstack.GetKeys("https://valorantesports.com/news", "body", &params)
+	return contentstack.GetKeys("https://valorantesports.com/news", `a[href^="/news/"]`, &params)
 }
 
 func (client EsportsClient) getContentStackParameters(count int) contentstack.Parameters {
