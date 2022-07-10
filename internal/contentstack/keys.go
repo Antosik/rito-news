@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Antosik/rito-news/internal/browser"
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/launcher"
 )
 
 type Keys struct {
@@ -20,32 +20,7 @@ func (keys Keys) String() string {
 func GetKeys(url string, selectorToWait string, params *Parameters) *Keys {
 	var keys Keys
 
-	path, _ := launcher.LookPath()
-	u := launcher.New().
-		Bin(path).
-		Set("--allow-running-insecure-content").
-		Set("--autoplay-policy", "user-gesture-required").
-		Set("--disable-component-update").
-		Set("--disable-domain-reliability").
-		Set("--disable-features", "AudioServiceOutOfProcess,IsolateOrigins,site-per-process").
-		Set("--disable-print-preview").
-		Set("--disable-setuid-sandbox").
-		Set("--disable-speech-api").
-		Set("--disable-web-security").
-		Set("--disk-cache-size", "33554432").
-		Set("--enable-features", "SharedArrayBuffer").
-		Set("--hide-scrollbars").
-		Set("--ignore-gpu-blocklist").
-		Set("--in-process-gpu").
-		Set("--mute-audio").
-		Set("--no-default-browser-check").
-		Set("--no-pings").
-		Set("--no-sandbox").
-		Set("--no-zygote").
-		Headless(true).
-		MustLaunch()
-
-	browser := rod.New().ControlURL(u).MustConnect()
+	browser := browser.NewBrowser()
 	defer browser.MustClose()
 
 	router := browser.HijackRequests()

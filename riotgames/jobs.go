@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Antosik/rito-news/internal/browser"
 	"github.com/Antosik/rito-news/internal/utils"
-
-	"github.com/go-rod/rod"
 )
 
 type JobsOfficeEntry struct {
@@ -50,7 +49,7 @@ type JobsClient struct {
 }
 
 func (client JobsClient) loadData() (string, string) {
-	browser := rod.New().MustConnect()
+	browser := browser.NewBrowser()
 	defer browser.MustClose()
 
 	page := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))

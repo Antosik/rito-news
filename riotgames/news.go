@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Antosik/rito-news/internal/browser"
 	"github.com/Antosik/rito-news/internal/utils"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/go-rod/rod"
 )
 
 type NewsEntry struct {
@@ -28,7 +28,7 @@ type NewsClient struct {
 }
 
 func (client NewsClient) initialLoad() ([]string, string) {
-	browser := rod.New().MustConnect()
+	browser := browser.NewBrowser()
 	defer browser.MustClose()
 
 	page := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
