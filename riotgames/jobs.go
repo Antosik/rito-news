@@ -52,17 +52,19 @@ func (client JobsClient) loadData() (string, string) {
 	browser := browser.NewBrowser()
 	defer browser.MustClose()
 
-	page := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
-	defer page.MustClose()
+	mainpage := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
 
-	link := *page.MustElement(".careers__cta").MustAttribute("href")
+	link := *mainpage.MustElement(".careers__cta").MustAttribute("href")
 	if !strings.Contains(link, "https://www.riotgames.com") {
 		link = "https://www.riotgames.com" + utils.TrimSlashes(link)
 	}
 
-	page.MustNavigate(link)
+	mainpage.MustClose()
 
-	data := page.MustElement(".js-job-list-wrapper").MustAttribute("data-props")
+	jobspage := browser.MustPage(link)
+	defer jobspage.MustClose()
+
+	data := jobspage.MustElement(".js-job-list-wrapper").MustAttribute("data-props")
 
 	return *data, link
 }
