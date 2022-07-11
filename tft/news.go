@@ -122,7 +122,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 			authors[i] = author.Title
 		}
 
-		categories := make([]string, len(item.Author))
+		categories := make([]string, len(item.Category))
 		for i, category := range item.Category {
 			categories[i] = category.Title
 		}
