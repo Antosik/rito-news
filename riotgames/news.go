@@ -31,19 +31,21 @@ func (client NewsClient) initialLoad() ([]string, string) {
 	browser := browser.NewBrowser()
 	defer browser.MustClose()
 
-	page := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
-	defer page.MustClose()
+	mainpage := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
 
-	link := *page.MustElement(".whats-happening__cta").MustAttribute("href")
+	link := *mainpage.MustElement(".whats-happening__cta").MustAttribute("href")
 	if !strings.Contains(link, "https://www.riotgames.com") {
 		link = "https://www.riotgames.com" + link
 	}
 
-	page.MustNavigate(link)
+	mainpage.MustClose()
+
+	newspage := browser.MustPage(link)
+	defer newspage.MustClose()
 
 	var (
-		ids  = page.MustElement(".js-load-more").MustAttribute("data-load-more-ids")
-		news = page.MustElements(".js-explore-hero-wrapper .content-center, .widget__wrapper--maxigrid .grid__item")
+		ids  = newspage.MustElement(".js-load-more").MustAttribute("data-load-more-ids")
+		news = newspage.MustElements(".js-explore-hero-wrapper .content-center, .widget__wrapper--maxigrid .grid__item")
 	)
 
 	newsHTML := make([]string, len(news))
@@ -102,12 +104,16 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 			err  error
 		)
 
-		date, err = time.Parse("02/01/2006", dateStr)
+		date, err = utils.ParseDateTimeWithLayouts(dateStr, []string{
+			"02/01/2006",
+			"Jan 2, 2006",
+			"January 2, 2006",
+			"2006/01/02",
+			"02.01.2006",
+			"2 January, 2006",
+		})
 		if err != nil {
-			date, err = time.Parse("Jan 2, 2006", dateStr)
-			if err != nil {
-				return nil, fmt.Errorf("can't parse article date: %w", err)
-			}
+			return nil, fmt.Errorf("can't parse article date: %w", err)
 		}
 
 		url, _ := el.Find("a").Attr("href")
