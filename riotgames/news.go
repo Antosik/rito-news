@@ -2,13 +2,10 @@ package riotgames
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/Antosik/rito-news/internal/browser"
 	"github.com/Antosik/rito-news/internal/utils"
 
 	"github.com/PuerkitoBio/goquery"
@@ -27,33 +24,50 @@ type NewsClient struct {
 	Locale string
 }
 
-func (client NewsClient) initialLoad() ([]string, string) {
-	browser := browser.NewBrowser()
-	defer browser.MustClose()
+func (client NewsClient) initialLoad() ([]string, string, error) {
+	main, err := utils.RunGETHTMLRequest(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
+	if err != nil {
+		return nil, "", err
+	}
 
-	mainpage := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
+	maindoc, err := utils.ReadHTML(main)
+	if err != nil {
+		return nil, "", fmt.Errorf("can't read main content: %w", err)
+	}
 
-	link := *mainpage.MustElement(".whats-happening__cta").MustAttribute("href")
+	link, linkFound := maindoc.Find(".whats-happening__cta").Attr("href")
+	if !linkFound {
+		return nil, "", fmt.Errorf("can't find careers page link")
+	}
+
 	if !strings.Contains(link, "https://www.riotgames.com") {
-		link = "https://www.riotgames.com" + link
+		link = "https://www.riotgames.com/" + utils.TrimSlashes(link)
 	}
 
-	mainpage.MustClose()
-
-	newspage := browser.MustPage(link)
-	defer newspage.MustClose()
-
-	var (
-		ids  = newspage.MustElement(".js-load-more").MustAttribute("data-load-more-ids")
-		news = newspage.MustElements(".js-explore-hero-wrapper .content-center, .widget__wrapper--maxigrid .grid__item")
-	)
-
-	newsHTML := make([]string, len(news))
-	for i, newsItem := range news {
-		newsHTML[i], _ = newsItem.HTML()
+	news, err := utils.RunGETHTMLRequest(link)
+	if err != nil {
+		return nil, "", err
 	}
 
-	return strings.Split(*ids, ","), strings.Join(newsHTML, "")
+	newsdoc, err := utils.ReadHTML(news)
+	if err != nil {
+		return nil, "", fmt.Errorf("can't read news content: %w", err)
+	}
+
+	ids, idsFound := newsdoc.Find(".js-load-more").Attr("data-load-more-ids")
+	if !idsFound {
+		return nil, "", fmt.Errorf("can't find ids to load: %w", err)
+	}
+
+	newsElements := newsdoc.Find(".js-explore-hero-wrapper .content-center, .widget__wrapper--maxigrid .grid__item")
+	newsHTML := make([]string, len(newsElements.Nodes))
+
+	for i := range newsElements.Nodes {
+		el := newsElements.Eq(i)
+		newsHTML[i], _ = el.Html()
+	}
+
+	return strings.Split(ids, ","), strings.Join(newsHTML, ""), nil
 }
 
 func (client NewsClient) loadNewsWithIds(ids []string) (string, error) {
@@ -65,24 +79,12 @@ func (client NewsClient) loadNewsWithIds(ids []string) (string, error) {
 		widget,
 	)
 
-	req, err := utils.NewGETJSONRequest(url)
+	body, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
 		return "", err
 	}
 
-	httpClient := &http.Client{}
-
-	res, err := httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("can't load more news: %w", err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", fmt.Errorf("can't parse news body: %w", err)
-	}
-
-	return strings.ReplaceAll(string(body), `\"`, `"`), nil
+	return strings.ReplaceAll(body, `\"`, `"`), nil
 }
 
 func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
@@ -135,7 +137,10 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 }
 
 func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
-	ids, initialsNews := client.initialLoad()
+	ids, initialsNews, err := client.initialLoad()
+	if err != nil {
+		return nil, err
+	}
 
 	items, err := client.extractNewsFromHTML(initialsNews)
 	if err != nil {

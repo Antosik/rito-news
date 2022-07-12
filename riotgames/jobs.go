@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Antosik/rito-news/internal/browser"
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
@@ -48,25 +47,42 @@ type JobsClient struct {
 	Locale string
 }
 
-func (client JobsClient) loadData() (string, string) {
-	browser := browser.NewBrowser()
-	defer browser.MustClose()
-
-	mainpage := browser.MustPage(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
-
-	link := *mainpage.MustElement(".careers__cta").MustAttribute("href")
-	if !strings.Contains(link, "https://www.riotgames.com") {
-		link = "https://www.riotgames.com" + utils.TrimSlashes(link)
+func (client JobsClient) loadData() (string, string, error) {
+	main, err := utils.RunGETHTMLRequest(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
+	if err != nil {
+		return "", "", err
 	}
 
-	mainpage.MustClose()
+	maindoc, err := utils.ReadHTML(main)
+	if err != nil {
+		return "", "", fmt.Errorf("can't read main content: %w", err)
+	}
 
-	jobspage := browser.MustPage(link)
-	defer jobspage.MustClose()
+	link, linkFound := maindoc.Find(".careers__cta").Attr("href")
+	if !linkFound {
+		return "", "", fmt.Errorf("can't find careers page link")
+	}
 
-	data := jobspage.MustElement(".js-job-list-wrapper").MustAttribute("data-props")
+	if !strings.Contains(link, "https://www.riotgames.com") {
+		link = "https://www.riotgames.com/" + utils.TrimSlashes(link)
+	}
 
-	return *data, link
+	jobs, err := utils.RunGETHTMLRequest(link)
+	if err != nil {
+		return "", "", err
+	}
+
+	jobsdoc, err := utils.ReadHTML(jobs)
+	if err != nil {
+		return "", "", fmt.Errorf("can't read jobs content: %w", err)
+	}
+
+	data, dataFound := jobsdoc.Find(".js-job-list-wrapper").Attr("data-props")
+	if !dataFound {
+		return "", "", fmt.Errorf("can't find data attribute")
+	}
+
+	return data, link, nil
 }
 
 func (client JobsClient) parseData(data string) ([]rawJobsEntry, error) {
@@ -81,7 +97,10 @@ func (client JobsClient) parseData(data string) ([]rawJobsEntry, error) {
 }
 
 func (client JobsClient) GetItems() ([]JobsEntry, error) {
-	data, link := client.loadData()
+	data, link, err := client.loadData()
+	if err != nil {
+		return nil, err
+	}
 
 	items, err := client.parseData(data)
 	if err != nil {
