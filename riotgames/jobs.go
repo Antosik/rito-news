@@ -8,6 +8,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// Riot Games office entry
 type JobsOfficeEntry struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -15,12 +16,14 @@ type JobsOfficeEntry struct {
 	URL  string `json:"url"`
 }
 
+// Riot Games craft entry
 type JobsCraftEntry struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	More string `json:"more"`
 }
 
+// Riot Games jobs entry
 type JobsEntry struct {
 	Craft    JobsCraftEntry  `json:"craft"`
 	Office   JobsOfficeEntry `json:"office"`
@@ -43,7 +46,13 @@ type rawJobsResponse struct {
 	Jobs []rawJobsEntry `json:"jobs"`
 }
 
+// A client that allows to get a list of available vacancies in Riot games.
+//
+// Source - https://www.riotgames.com/en/work-with-us
 type JobsClient struct {
+	// Available locales:
+	// en, id, ms, pt-br, cs, fr, de, el, hu, it, ja, ko,
+	// es-419, pl, ro, ru, zh-cn, es, th, zh-hant, tr, vi
 	Locale string
 }
 

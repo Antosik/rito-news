@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// VALORANT news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Date        time.Time `json:"date"`
@@ -43,7 +44,13 @@ type rawNewsResponse struct {
 	} `json:"result"`
 }
 
+// A client that allows to get official VALORANT news.
+//
+// Source - https://playvalorant.com/en-us/news/
 type NewsClient struct {
+	// Available locales:
+	// en-US, en-GB, de-DE, es-ES, fr-FR, it-IT, pl-PL, ru-RU, tr-TR,
+	// es-MX, id-ID, ja-JP, ko-KR, pt-BR, th-TH, vi-VN, zh-TW, ar-AE
 	Locale string
 }
 

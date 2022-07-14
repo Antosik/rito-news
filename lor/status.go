@@ -8,9 +8,15 @@ import (
 	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
+// Legends of Runeterra server status entry
 type StatusEntry serverstatus.Entry
 
+// A client that allows to get Legends of Runeterra server status.
+//
+// Source - https://status.riotgames.com/lor
 type StatusClient struct {
+	// Available regions:
+	// americas, asia, apac, europe
 	Region string
 }
 
@@ -32,6 +38,9 @@ func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale stri
 	)
 }
 
+// Available locales:
+// en-US, de-DE, es-ES, es-MX, fr-FR, it-IT, ja-JP, ko-KR,
+// pl-PL, pt-BR, ru-RU, th-TH, tr-TR, vi-VN, zh-TW
 func (client StatusClient) GetItems(locale string) ([]StatusEntry, error) {
 	items, err := client.loadItems(locale)
 	if err != nil {

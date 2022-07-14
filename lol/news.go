@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// League of Legends news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -54,7 +55,13 @@ type rawNewsResponse struct {
 	} `json:"result"`
 }
 
+// A client that allows to get official League of Legends news.
+//
+// Source - https://www.leagueoflegends.com/en-us/news
 type NewsClient struct {
+	// Available locales:
+	// en-US, en-GB, de-DE, es-ES, fr-FR, it-IT, en-PL, pl-PL, el-GR, ro-RO,
+	// hu-HU, cs-CZ, es-MX, pt-BR, ja-JP, ru-RU, tr-TR, en-AU, ko-KR,
 	Locale string
 }
 

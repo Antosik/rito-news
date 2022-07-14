@@ -1,3 +1,4 @@
+// Package contenstack implements the way to communicate with the contentstack-dependable content systems
 package contentstack
 
 import (

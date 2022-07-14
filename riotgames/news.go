@@ -11,6 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// RiotGames news entry
 type NewsEntry struct {
 	Category    string    `json:"category"`
 	Date        time.Time `json:"date"`
@@ -20,7 +21,13 @@ type NewsEntry struct {
 	URL         string    `json:"url"`
 }
 
+// A client that allows to get official RiotGames news.
+//
+// Source - https://www.riotgames.com/en/news
 type NewsClient struct {
+	// Available locales:
+	// en, id, ms, pt-br, cs, fr, de, el, hu, it, ja, ko,
+	// es-419, pl, ro, ru, zh-cn, es, th, zh-hant, tr, vi
 	Locale string
 }
 

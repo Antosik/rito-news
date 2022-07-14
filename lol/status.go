@@ -8,9 +8,15 @@ import (
 	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
+// League of Legends server status entry
 type StatusEntry serverstatus.Entry
 
+// A client that allows to get League of Legends server status.
+//
+// Source - https://status.riotgames.com/lol;
 type StatusClient struct {
+	// Available regions:
+	// br1, eun1, euw1, jp1, kr1, la1, la2, na1, oc1, pbe, ru1, tr1
 	Region string
 }
 

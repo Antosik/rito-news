@@ -8,9 +8,15 @@ import (
 	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
+// Wild Rift server status entry
 type StatusEntry serverstatus.Entry
 
+// A client that allows to get Wild Rift server status.
+//
+// Source - https://status.riotgames.com/wildrift
 type StatusClient struct {
+	// Available regions:
+	// br, eu, jp, kr, latam, mei, na, ru, sea
 	Region string
 }
 
@@ -32,6 +38,9 @@ func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale stri
 	)
 }
 
+// Available locales:
+// en-US, de-DE, en-GB, es-MX, es-ES, fr-FR, id-ID, it-IT, ja-JP, ko-KR,
+// pl-PL, ms-MY, pt-BR, ru-RU, th-TH, tr-TR, vi-VN, zh-MY, zh-TW
 func (client StatusClient) GetItems(locale string) ([]StatusEntry, error) {
 	items, err := client.loadItems(locale)
 	if err != nil {

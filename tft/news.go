@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// Teamfight Tactics news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -56,7 +57,13 @@ type teamfightTacticsNewsAPIResponse struct {
 	} `json:"result"`
 }
 
+// A client that allows to get official Teamfight Tactics news.
+//
+// Source - https://teamfighttactics.leagueoflegends.com/
 type NewsClient struct {
+	// Available locales:
+	// en-US, en-GB, de-DE, es-ES, fr-FR, it-IT, en-AU, pl-PL, ru-RU,
+	// el-GR, ro-RO, hu-HU, cs-CZ, es-MX, pt-BR, tr-TR, ko-KR, ja-JP
 	Locale string
 }
 

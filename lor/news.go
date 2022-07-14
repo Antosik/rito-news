@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// Legends of Runeterra news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -45,7 +46,13 @@ type rawNewsEntry struct {
 	} `json:"url"`
 }
 
+// A client that allows to get official Legends of Runeterra news
+//
+// Source - https://playruneterra.com/en-us/news/
 type NewsClient struct {
+	// Available locales:
+	// en-US, ko-KR, fr-FR, es-ES, es-MX, de-DE, it-IT, pl-PL,
+	// pt-BR, tr-TR, ru-RU, ja-JP, en-SG, zh-TW, th-TH, vi-VN
 	Locale string
 }
 

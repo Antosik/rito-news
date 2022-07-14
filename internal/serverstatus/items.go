@@ -1,3 +1,4 @@
+// Package serverstatus implements the way to interact with Server Status system (https://status.riotgames.com)
 package serverstatus
 
 import (

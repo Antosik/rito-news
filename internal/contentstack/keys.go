@@ -55,8 +55,5 @@ func GetKeys(url string, selectorToWait string, params *Parameters) *Keys {
 		page.MustElement(selectorToWait)
 	}
 
-	// Hijack requests under the scope of a page
-	page.HijackRequests()
-
 	return &keys
 }

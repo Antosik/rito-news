@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// VALORANT esports news entry
 type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -40,7 +41,13 @@ type rawEsportsEntry struct {
 	VideoLink string `json:"video_link"`
 }
 
+// A client that allows to get VALORANT esports news.
+//
+// Source - https://valorantesports.com/news
 type EsportsClient struct {
+	// Available locales:
+	// en-US, en-GB, en-AU, de-DE, es-ES, es-MX, fr-FR, it-IT, pl-PL,
+	// pt-BR, ru-RU, tr-TR, ja-JP, ko-KR, zh-TW, th-TH, en-PH, en-SG
 	Locale string
 }
 

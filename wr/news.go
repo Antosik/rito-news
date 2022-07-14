@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// Wild Rift news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Categories  []string  `json:"categories"`
@@ -54,7 +55,13 @@ type rawNewsResponse struct {
 	} `json:"result"`
 }
 
+// A client that allows to get official Wild Rift news.
+//
+// Source - https://wildrift.leagueoflegends.com/en-us/news/
 type NewsClient struct {
+	// Available locales:
+	// en-US, en-GB, fr-FR, de-DE, es-ES, it-IT, pl-PL, ru-RU, tr-TR, id-ID,
+	// ms-MY, pt-BR, ja-JP, ko-KR, zh-TW, th-TH, vi-VN, es-MX, en-SG, ar-AE,
 	Locale string
 }
 

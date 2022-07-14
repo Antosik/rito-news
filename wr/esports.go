@@ -10,6 +10,7 @@ import (
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
+// VALORANT esports news entry
 type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -43,7 +44,14 @@ type rawEsportsEntry struct {
 	} `json:"url"`
 }
 
+// A client that allows to get Wild Rift esports news.
+//
+// Source - https://wildriftesports.com
 type EsportsClient struct {
+	// Available locales:
+	// en-US, en-GB, en-AU, cs-CZ, de-DE, el-GR, es-ES, es-MX,
+	// fr-FR, it-IT, pl-PL, pt-BR, ro-RO, ru-RU, tr-TR, ja-JP,
+	// ko-KR, zh-TW, th-TH, en-PH, en-SG, id-ID, vi-VN,
 	Locale string
 }
 

@@ -8,9 +8,15 @@ import (
 	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
+// VALORANT server status entry
 type StatusEntry serverstatus.Entry
 
+// A client that allows to get VALORANT server status.
+//
+// Source - https://status.riotgames.com/valorant
 type StatusClient struct {
+	// Available regions:
+	// ap, br, eu, kr, latam, na, pbe
 	Region string
 }
 
@@ -32,6 +38,9 @@ func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale stri
 	)
 }
 
+// Available locales:
+// en-US, ar-AE, de-DE, es-ES, es-MX, fr-FR, id-ID, it-IT, ja-JP,
+// ko-KR, pl-PL, pt-BR, ru-RU, tr-TR, th-TH, vi-VN, zh-TW
 func (client StatusClient) GetItems(locale string) ([]StatusEntry, error) {
 	items, err := client.loadItems(locale)
 	if err != nil {
