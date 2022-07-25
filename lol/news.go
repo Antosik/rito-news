@@ -96,6 +96,10 @@ func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 }
 
 func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
+	if entry.Node.ExternalLink != "" {
+		return entry.Node.ExternalLink
+	}
+
 	if entry.Node.YouTubeLink != "" {
 		return entry.Node.YouTubeLink
 	}
