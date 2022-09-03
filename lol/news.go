@@ -18,6 +18,7 @@ type NewsEntry struct {
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
 	Title       string    `json:"title"`
 	URL         string    `json:"url"`
 }
@@ -27,6 +28,9 @@ type rawNewsEntry struct {
 		Author []struct {
 			Title string `json:"title"`
 		} `json:"author"`
+		ArticleTags []struct {
+			Title string `json:"title"`
+		} `json:"article_tags"`
 		Banner struct {
 			URL string `json:"url"`
 		} `json:"banner"`
@@ -60,8 +64,8 @@ type rawNewsResponse struct {
 // Source - https://www.leagueoflegends.com/en-us/news
 type NewsClient struct {
 	// Available locales:
-	// en-US, en-GB, de-DE, es-ES, fr-FR, it-IT, en-PL, pl-PL, el-GR, ro-RO,
-	// hu-HU, cs-CZ, es-MX, pt-BR, ja-JP, ru-RU, tr-TR, en-AU, ko-KR,
+	// en-us, en-gb, de-de, es-es, fr-fr, it-it, en-pl, pl-pl, el-gr, ro-ro,
+	// hu-hu, cs-cz, es-mx, pt-br, ja-jp, ru-ru, tr-tr, en-au, ko-kr
 	Locale string
 }
 
@@ -128,6 +132,11 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 			categories[i] = category.Title
 		}
 
+		tags := make([]string, len(item.Node.ArticleTags))
+		for i, tag := range item.Node.ArticleTags {
+			tags[i] = tag.Title
+		}
+
 		results[i] = NewsEntry{
 			UID:         item.Node.UID,
 			Authors:     authors,
@@ -135,6 +144,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 			Date:        item.Node.Date,
 			Description: item.Node.Description,
 			Image:       item.Node.Banner.URL,
+			Tags:        tags,
 			Title:       item.Node.Title,
 			URL:         url,
 		}
