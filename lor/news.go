@@ -51,8 +51,8 @@ type rawNewsEntry struct {
 // Source - https://playruneterra.com/en-us/news/
 type NewsClient struct {
 	// Available locales:
-	// en-US, ko-KR, fr-FR, es-ES, es-MX, de-DE, it-IT, pl-PL,
-	// pt-BR, tr-TR, ru-RU, ja-JP, en-SG, zh-TW, th-TH, vi-VN
+	// en-us, ko-kr, fr-fr, es-es, es-mx, de-de, it-it, pl-pl,
+	// pt-br, tr-tr, ru-ru, ja-jp, en-sg, zh-tw, th-th, vi-vn
 	Locale string
 }
 
@@ -86,18 +86,13 @@ func (client NewsClient) getContentStackParameters(count int) contentstack.Param
 				"category",
 			},
 			"only[article_tags][]": {
-				"machine_name",
 				"title",
-				"url",
 			},
 			"only[author][]": {
 				"title",
-				"image",
 			},
 			"only[category][]": {
-				"machine_name",
 				"title",
-				"url",
 			},
 		},
 	}
