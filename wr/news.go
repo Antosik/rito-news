@@ -60,8 +60,8 @@ type rawNewsResponse struct {
 // Source - https://wildrift.leagueoflegends.com/en-us/news/
 type NewsClient struct {
 	// Available locales:
-	// en-US, en-GB, fr-FR, de-DE, es-ES, it-IT, pl-PL, ru-RU, tr-TR, id-ID,
-	// ms-MY, pt-BR, ja-JP, ko-KR, zh-TW, th-TH, vi-VN, es-MX, en-SG, ar-AE,
+	// en-us, en-gb, fr-fr, de-de, es-es, it-it, pl-pl, ru-ru, tr-tr, id-id,
+	// ms-my, pt-br, ja-jp, ko-kr, zh-tw, th-th, vi-vn, es-mx, en-sg, ar-ae
 	Locale string
 }
 
