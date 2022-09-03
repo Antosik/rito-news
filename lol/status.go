@@ -16,10 +16,12 @@ type StatusEntry serverstatus.Entry
 // Source - https://status.riotgames.com/lol;
 type StatusClient struct {
 	// Available regions and locales:
-	// br1 (en-US, pt-BR); eun1 (en-US, en-GB, cs-CZ, el-GR, hu-HU, pl-PL, ro-RO); euw1 (en-US, en-GB, de-DE, es-ES, fr-FR, it-IT);
+	// br1 (en-US, pt-BR); eun1 (en-US, en-GB, cs-CZ, el-GR, hu-HU, pl-PL, ro-RO);
+	// euw1 (en-US, en-GB, de-DE, es-ES, fr-FR, it-IT);
 	// jp1 (en-US, ja-JP); kr1 (en-US, ko-KR); la1 (en-US, es-MX); la2 (en-US, es-AR);
 	// na1 (en-US); oc1 (en-US, en-AU); ru1 (en-US, ru-RU); tr1 (en-US, tr-TR);
-	// pbe (en-US, cs-CZ, de-DE, el-GR, es-MX, es-ES, fr-FR, hu-HU, it-IT, ja-JP, ko-KR, pl-PL, pt-BR, ro-RO, ru-RU, tr-TR).
+	// pbe (en-US, cs-CZ, de-DE, el-GR, es-MX, es-ES, fr-FR, hu-HU,
+	//	it-IT, ja-JP, ko-KR, pl-PL, pt-BR, ro-RO, ru-RU, tr-TR).
 	Region string
 }
 
