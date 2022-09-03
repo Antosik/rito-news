@@ -17,6 +17,7 @@ type EsportsEntry struct {
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
 	Title       string    `json:"title"`
 	URL         string    `json:"url"`
 }
@@ -31,7 +32,10 @@ type rawEsportsEntry struct {
 	HeaderImage  struct {
 		URL string `json:"url"`
 	} `json:"header_image"`
-	Intro string `json:"intro"`
+	Intro  string `json:"intro"`
+	League []struct {
+		Title string `json:"title"`
+	} `json:"league"`
 	Title string `json:"title"`
 	URL   string `json:"url"`
 }
@@ -41,8 +45,8 @@ type rawEsportsEntry struct {
 // Source - https://lolesports.com/news
 type EsportsClient struct {
 	// Available locales:
-	// en-US, en-GB, de-DE, es-ES, es-MX, fr-FR, it-IT, pl-PL, pt-BR,
-	// ru-RU, tr-TR, ja-JP, ko-KR, zh-TW, th-TH, en-PH, en-SG
+	// en-us, en-gb, de-de, es-es, es-mx, fr-fr, it-it, pl-pl, pt-br,
+	// ru-ru, tr-tr, ja-jp, ko-kr, zh-tw, th-th, en-ph, en-sg
 	Locale string
 }
 
@@ -63,6 +67,7 @@ func (client EsportsClient) getContentStackParameters(count int) contentstack.Pa
 				"_content_type_uid",
 				"header_image",
 				"author",
+				"league",
 				"date",
 				"intro",
 				"external_link",
@@ -70,8 +75,12 @@ func (client EsportsClient) getContentStackParameters(count int) contentstack.Pa
 			},
 			"include[]": {
 				"author",
+				"league",
 			},
 			"only[author][]": {
+				"title",
+			},
+			"only[league][]": {
 				"title",
 			},
 		},
@@ -123,12 +132,18 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 			authors[i] = author.Title
 		}
 
+		tags := make([]string, len(item.League))
+		for i, league := range item.League {
+			tags[i] = league.Title
+		}
+
 		results[i] = EsportsEntry{
 			UID:         item.UID,
 			Authors:     authors,
 			Date:        item.Date,
 			Description: item.Intro,
 			Image:       item.HeaderImage.URL,
+			Tags:        tags,
 			Title:       item.Title,
 			URL:         url,
 		}
