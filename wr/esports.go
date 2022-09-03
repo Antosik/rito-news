@@ -18,6 +18,7 @@ type EsportsEntry struct {
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
 	Title       string    `json:"title"`
 	URL         string    `json:"url"`
 }
@@ -35,10 +36,13 @@ type rawEsportsEntry struct {
 	Category []struct {
 		Title string `json:"title"`
 	} `json:"category"`
-	Date         time.Time `json:"date"`
-	Description  string    `json:"description"`
-	ExternalLink string    `json:"external_link"`
-	Title        string    `json:"title"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Event       []struct {
+		Title string `json:"title"`
+	} `json:"event"`
+	ExternalLink string `json:"external_link"`
+	Title        string `json:"title"`
 	URL          struct {
 		URL string `json:"url"`
 	} `json:"url"`
@@ -49,9 +53,9 @@ type rawEsportsEntry struct {
 // Source - https://wildriftesports.com
 type EsportsClient struct {
 	// Available locales:
-	// en-US, en-GB, en-AU, cs-CZ, de-DE, el-GR, es-ES, es-MX,
-	// fr-FR, it-IT, pl-PL, pt-BR, ro-RO, ru-RU, tr-TR, ja-JP,
-	// ko-KR, zh-TW, th-TH, en-PH, en-SG, id-ID, vi-VN,
+	// en-us, en-gb, en-au, cs-cz, de-de, el-gr, es-es, es-mx,
+	// fr-fr, it-it, pl-pl, pt-br, ro-ro, ru-ru, tr-tr, ja-jp,
+	// ko-kr, zh-TW, th-th, en-PH, en-SG, id-ID, vi-vn,
 	Locale string
 }
 
@@ -75,20 +79,23 @@ func (client EsportsClient) getContentStackParameters(count int) contentstack.Pa
 				"category",
 				"date",
 				"description",
+				"event",
 				"external_link",
 				"url",
 			},
 			"include[]": {
 				"authors",
 				"category",
+				"event",
 			},
 			"only[authors][]": {
 				"title",
 			},
 			"only[category][]": {
-				"machine_name",
 				"title",
-				"url",
+			},
+			"only[event][]": {
+				"title",
 			},
 		},
 	}
@@ -144,6 +151,11 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 			categories[i] = category.Title
 		}
 
+		tags := make([]string, len(item.Event))
+		for i, event := range item.Event {
+			tags[i] = event.Title
+		}
+
 		results[i] = EsportsEntry{
 			UID:         item.UID,
 			Authors:     authors,
@@ -151,6 +163,7 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 			Date:        item.Date,
 			Description: item.Description,
 			Image:       item.BannerSettings.Banner.URL,
+			Tags:        tags,
 			Title:       item.Title,
 			URL:         url,
 		}
