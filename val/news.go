@@ -13,18 +13,26 @@ import (
 // VALORANT news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
+	Categories  []string  `json:"categories"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
 	Title       string    `json:"title"`
 	URL         string    `json:"url"`
 }
 
 type rawNewsEntry struct {
-	UID    string `json:"uid"`
+	UID         string `json:"uid"`
+	ArticleTags []struct {
+		Title string `json:"title"`
+	} `json:"article_tags"`
 	Banner struct {
 		URL string `json:"url"`
 	} `json:"banner"`
+	Category []struct {
+		Title string `json:"title"`
+	} `json:"category"`
 	Date         time.Time `json:"date"`
 	Description  string    `json:"description"`
 	ExternalLink string    `json:"external_link"`
@@ -49,8 +57,8 @@ type rawNewsResponse struct {
 // Source - https://playvalorant.com/en-us/news/
 type NewsClient struct {
 	// Available locales:
-	// en-US, en-GB, de-DE, es-ES, fr-FR, it-IT, pl-PL, ru-RU, tr-TR,
-	// es-MX, id-ID, ja-JP, ko-KR, pt-BR, th-TH, vi-VN, zh-TW, ar-AE
+	// en-us, en-gb, de-de, es-es, fr-fr, it-it, pl-pl, ru-ru, tr-tr,
+	// es-mx, id-id, ja-jp, ko-kr, pt-br, th-th, vi-vn, zh-tw, ar-ae
 	Locale string
 }
 
@@ -103,11 +111,23 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
 
+		categories := make([]string, len(item.Category))
+		for i, category := range item.Category {
+			categories[i] = category.Title
+		}
+
+		tags := make([]string, len(item.ArticleTags))
+		for i, tag := range item.ArticleTags {
+			tags[i] = tag.Title
+		}
+
 		results[i] = NewsEntry{
 			UID:         item.UID,
+			Categories:  categories,
 			Date:        item.Date,
 			Description: item.Description,
 			Image:       item.Banner.URL,
+			Tags:        tags,
 			Title:       item.Title,
 			URL:         url,
 		}
