@@ -62,8 +62,8 @@ type teamfightTacticsNewsAPIResponse struct {
 // Source - https://teamfighttactics.leagueoflegends.com/
 type NewsClient struct {
 	// Available locales:
-	// en-US, en-GB, de-DE, es-ES, fr-FR, it-IT, en-AU, pl-PL, ru-RU,
-	// el-GR, ro-RO, hu-HU, cs-CZ, es-MX, pt-BR, tr-TR, ko-KR, ja-JP
+	// en-us, en-gb, de-de, es-es, fr-fr, it-it, en-au, pl-pl, ru-ru,
+	// el-gr, ro-ro, hu-hu, cs-cz, es-mx, pt-br, tr-tr, ko-kr, ja-jp
 	Locale string
 }
 
