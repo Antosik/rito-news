@@ -20,6 +20,8 @@ type StatusClient struct {
 	// euw1 (en-US, en-GB, de-DE, es-ES, fr-FR, it-IT);
 	// jp1 (en-US, ja-JP); kr1 (en-US, ko-KR); la1 (en-US, es-MX); la2 (en-US, es-AR);
 	// na1 (en-US); oc1 (en-US, en-AU); ru1 (en-US, ru-RU); tr1 (en-US, tr-TR);
+	// ph2 (en-US, en_PH); sg2 (en-US, en-SG, zh_MY); th2 (en-US, th_TH);
+	// tr1 (en-US, tr_TR); tw2 (en-US, zh_TW); vn2 (en-US, vi_VN);
 	// pbe (en-US, cs-CZ, de-DE, el-GR, es-MX, es-ES, fr-FR, hu-HU,
 	//	it-IT, ja-JP, ko-KR, pl-PL, pt-BR, ro-RO, ru-RU, tr-TR).
 	Region string

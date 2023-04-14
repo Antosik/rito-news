@@ -64,6 +64,7 @@ type NewsClient struct {
 	// Available locales:
 	// en-us, en-gb, de-de, es-es, fr-fr, it-it, en-au, pl-pl, ru-ru,
 	// el-gr, ro-ro, hu-hu, cs-cz, es-mx, pt-br, tr-tr, ko-kr, ja-jp
+	// en-sg, en-ph, zh-tw, vi-vn, th-th
 	Locale string
 }
 

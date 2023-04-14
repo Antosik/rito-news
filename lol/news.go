@@ -65,7 +65,8 @@ type rawNewsResponse struct {
 type NewsClient struct {
 	// Available locales:
 	// en-us, en-gb, de-de, es-es, fr-fr, it-it, en-pl, pl-pl, el-gr, ro-ro,
-	// hu-hu, cs-cz, es-mx, pt-br, ja-jp, ru-ru, tr-tr, en-au, ko-kr
+	// hu-hu, cs-cz, es-mx, pt-br, ja-jp, ru-ru, tr-tr, en-au, ko-kr,
+	// en-sg, en-ph, vi-vn, th-th, zh-tw
 	Locale string
 }
 

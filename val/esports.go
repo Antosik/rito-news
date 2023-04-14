@@ -52,6 +52,7 @@ type EsportsClient struct {
 	// Available locales:
 	// en-us, en-gb, en-au, de-de, es-es, es-mx, fr-fr, it-it, pl-pl,
 	// pt-br, ru-ru, tr-tr, ja-jp, ko-kr, zh-tw, th-th, en-ph, en-sg
+	// id-id, vi-vn
 	Locale string
 }
 
