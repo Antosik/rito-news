@@ -16,7 +16,7 @@ type StatusEntry serverstatus.Entry
 // Source - https://status.riotgames.com/lor
 type StatusClient struct {
 	// Available regions:
-	// americas, asia, apac, europe
+	// americas, apac, europe
 	Region string
 }
 
