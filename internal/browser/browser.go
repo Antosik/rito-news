@@ -22,6 +22,7 @@ func NewBrowser() *rod.Browser {
 		Set("--disable-web-security").   // Don't enforce the same-origin policy.
 		Set("--disk-cache-size", "33554432").
 		Set("--disable-gpu").
+		Set("--disable-dev-shm-usage").
 		Set("--blink-settings", "imagesEnabled=false").
 		Set("--enable-automation"). // Disable a few things considered not appropriate for automation.
 		Set("--enable-features", "SharedArrayBuffer").
