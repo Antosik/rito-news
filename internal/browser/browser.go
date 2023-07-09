@@ -2,12 +2,26 @@
 package browser
 
 import (
+	"os"
+
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 )
 
+func GetBrowserPath() string {
+	envPath, exists := os.LookupEnv("CHROMIUM_PATH")
+	if exists {
+		return envPath
+	}
+
+	lookPath, _ := launcher.LookPath()
+
+	return lookPath
+}
+
 func NewBrowser() *rod.Browser {
-	path, _ := launcher.LookPath()
+	path := GetBrowserPath()
+
 	u := launcher.New().
 		Bin(path).
 		Set("--allow-running-insecure-content").
