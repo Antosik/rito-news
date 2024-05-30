@@ -9,7 +9,12 @@ import (
 func Example_WRNews(locale string, count int) {
 	client := wr.NewsClient{Locale: locale}
 
-	entries, _ := client.GetItems(count)
+	entries, err := client.GetItems(count)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}
@@ -18,7 +23,12 @@ func Example_WRNews(locale string, count int) {
 func Example_WREsportsNews(locale string, count int) {
 	client := wr.EsportsClient{Locale: locale}
 
-	entries, _ := client.GetItems(count)
+	entries, err := client.GetItems(count)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}
@@ -27,7 +37,12 @@ func Example_WREsportsNews(locale string, count int) {
 func Example_WRServerStatus(region string, locale string) {
 	client := wr.StatusClient{Region: region}
 
-	entries, _ := client.GetItems(locale)
+	entries, err := client.GetItems(locale)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}

@@ -9,7 +9,12 @@ import (
 func Example_LoRNews(locale string, count int) {
 	client := lor.NewsClient{Locale: locale}
 
-	entries, _ := client.GetItems(count)
+	entries, err := client.GetItems(count)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}
@@ -18,7 +23,12 @@ func Example_LoRNews(locale string, count int) {
 func Example_LoRServerStatus(region string, locale string) {
 	client := lor.StatusClient{Region: region}
 
-	entries, _ := client.GetItems(locale)
+	entries, err := client.GetItems(locale)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}

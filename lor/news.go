@@ -3,10 +3,10 @@ package lor
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"time"
 
-	"github.com/Antosik/rito-news/internal/contentstack"
 	"github.com/Antosik/rito-news/internal/utils"
 )
 
@@ -46,6 +46,10 @@ type rawNewsEntry struct {
 	} `json:"url"`
 }
 
+type rawDataResponse struct {
+	List []rawNewsEntry `json:"list"`
+}
+
 // A client that allows to get official Legends of Runeterra news
 //
 // Source - https://playruneterra.com/en-us/news/
@@ -56,67 +60,34 @@ type NewsClient struct {
 	Locale string
 }
 
-func (NewsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
-	return contentstack.GetKeys("https://playruneterra.com/en-us/news/", ".page ul li", &params)
-}
+func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
+	url := fmt.Sprintf(
+		"https://playruneterra.com/api/articles?locale=%s&offset=0&limit=%d",
+		client.Locale,
+		count,
+	)
 
-func (client NewsClient) getContentStackParameters(count int) contentstack.Parameters {
-	return contentstack.Parameters{
-		ContentType: "news_2",
-		Locale:      client.Locale,
-		Count:       count,
-		Environment: "live",
-		Filters: map[string][]string{
-			"query": {`{"hide_from_newsfeeds":{"$ne":true}}`},
-			"only[BASE][]": {
-				"title",
-				"_content_type_uid",
-				"cover_image",
-				"author",
-				"article_tags",
-				"category",
-				"date",
-				"summary",
-				"external_link",
-				"url",
-			},
-			"include[]": {
-				"article_tags",
-				"author",
-				"category",
-			},
-			"only[article_tags][]": {
-				"title",
-			},
-			"only[author][]": {
-				"title",
-			},
-			"only[category][]": {
-				"title",
-			},
-		},
-	}
-}
-
-func (client NewsClient) getContentStackItems(count int) ([]rawNewsEntry, error) {
-	params := client.getContentStackParameters(count)
-	keys := client.getContentStackKeys(params)
-
-	rawitems, err := contentstack.GetItems(keys, &params)
+	req, err := utils.NewGETJSONRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]rawNewsEntry, len(rawitems))
+	httpClient := &http.Client{}
 
-	for i, raw := range rawitems {
-		err := json.Unmarshal(raw, &items[i])
-		if err != nil {
-			return nil, fmt.Errorf("can't parse item: %w", err)
-		}
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("can't load news: %w", err)
+	}
+	defer res.Body.Close()
+
+	var response rawDataResponse
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	return items, nil
+	sliceSize := utils.MinInt(count, len(response.List))
+
+	return response.List[:sliceSize], nil
 }
 
 func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
@@ -128,7 +99,7 @@ func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
 }
 
 func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
-	items, err := client.getContentStackItems(count)
+	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}

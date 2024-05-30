@@ -3,8 +3,8 @@ package lol
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
@@ -24,39 +24,43 @@ type NewsEntry struct {
 }
 
 type rawNewsEntry struct {
-	Node struct {
-		Author []struct {
-			Title string `json:"title"`
-		} `json:"author"`
-		ArticleTags []struct {
-			Title string `json:"title"`
-		} `json:"article_tags"`
-		Banner struct {
+	Title  string    `json:"title"`
+	Date   time.Time `json:"publishedAt"`
+	Action struct {
+		Type    string `json:"type"` // 'weblink', 'youtube_video'
+		Payload struct {
 			URL string `json:"url"`
-		} `json:"banner"`
-		Category []struct {
-			Title string `json:"title"`
-		} `json:"category"`
-		Date         time.Time `json:"date"`
-		Description  string    `json:"description"`
-		ExternalLink string    `json:"external_link"`
-		Title        string    `json:"title"`
-		UID          string    `json:"uid"`
-		URL          struct {
-			URL string `json:"url"`
-		} `json:"url"`
-		YouTubeLink string `json:"youtube_link"`
-	} `json:"node"`
+		} `json:"payload"`
+	} `json:"action"`
+	Media struct {
+		Type string `json:"type"` // 'image'
+		URL  string `json:"url"`
+	} `json:"media"`
+	Description struct {
+		Type string `json:"type"` // 'html'
+		Body string `json:"body"`
+	} `json:"description"`
+	Category struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		MachineName string `json:"machineName"`
+	} `json:"category"`
 }
 
-type rawNewsResponse struct {
-	Result struct {
-		Data struct {
-			AllArticles struct {
-				Edges []rawNewsEntry `json:"edges"`
-			} `json:"allArticles"`
-		} `json:"data"`
-	} `json:"result"`
+type rawDataBladeResponse struct {
+	Type       string         `json:"type"`
+	FragmentID string         `json:"fragmentId"` // should be 'news'
+	Items      []rawNewsEntry `json:"items"`
+}
+
+type rawDataResponse struct {
+	Props struct {
+		PageProps struct {
+			Page struct {
+				Blades []rawDataBladeResponse `json:"blades"`
+			} `json:"page"`
+		} `json:"pageProps"`
+	} `json:"props"`
 }
 
 // A client that allows to get official League of Legends news.
@@ -72,44 +76,62 @@ type NewsClient struct {
 
 func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 	url := fmt.Sprintf(
-		"https://www.leagueoflegends.com/page-data/%s/latest-news/page-data.json",
+		"https://www.leagueoflegends.com/%s/news/",
 		client.Locale,
 	)
 
-	req, err := utils.NewGETJSONRequest(url)
+	body, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	httpClient := &http.Client{}
-
-	res, err := httpClient.Do(req)
+	doc, err := utils.ReadHTML(body)
 	if err != nil {
-		return nil, fmt.Errorf("can't load news: %w", err)
+		return nil, fmt.Errorf("can't read news page content: %w", err)
 	}
-	defer res.Body.Close()
 
-	var response rawNewsResponse
-	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+	content := doc.Find("#__NEXT_DATA__").Text()
+
+	var response rawDataResponse
+	if err := json.NewDecoder(strings.NewReader(content)).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	edges := response.Result.Data.AllArticles.Edges
-	sliceSize := utils.MinInt(count, len(edges))
+	for _, item := range response.Props.PageProps.Page.Blades {
+		if item.FragmentID != "news" || len(item.Items) == 0 {
+			continue
+		}
 
-	return edges[:sliceSize], nil
+		items := item.Items
+
+		// Sort in case of same publish date
+		sort.Slice(items, func(i, j int) bool {
+			datecomp := items[i].Date.Compare(items[j].Date)
+
+			if datecomp == 0 {
+				return items[i].Title < items[j].Title
+			}
+
+			return datecomp > 0
+		})
+
+		sliceSize := utils.MinInt(count, len(item.Items))
+
+		return items[:sliceSize], nil
+	}
+
+	return nil, fmt.Errorf("can't find news data: %w", err)
 }
 
 func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
-	if entry.Node.ExternalLink != "" {
-		return entry.Node.ExternalLink
+	switch linkType := entry.Action.Type; linkType {
+	case "weblink":
+		return fmt.Sprintf("https://www.leagueoflegends.com/%s/", utils.TrimSlashes(entry.Action.Payload.URL))
+	case "youtube_video":
+		return entry.Action.Payload.URL
+	default:
+		return fmt.Sprintf("https://www.leagueoflegends.com/%s/news", client.Locale)
 	}
-
-	if entry.Node.YouTubeLink != "" {
-		return entry.Node.YouTubeLink
-	}
-
-	return fmt.Sprintf("https://www.leagueoflegends.com/%s/%s/", client.Locale, utils.TrimSlashes(entry.Node.URL.URL))
 }
 
 func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
@@ -123,30 +145,20 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
 
-		authors := make([]string, len(item.Node.Author))
-		for i, author := range item.Node.Author {
-			authors[i] = author.Title
-		}
-
-		categories := make([]string, len(item.Node.Category))
-		for i, category := range item.Node.Category {
-			categories[i] = category.Title
-		}
-
-		tags := make([]string, len(item.Node.ArticleTags))
-		for i, tag := range item.Node.ArticleTags {
-			tags[i] = tag.Title
-		}
+		uid := item.Action.Payload.URL
+		authors := make([]string, 0)
+		categories := []string{item.Category.Title}
+		tags := make([]string, 0)
 
 		results[i] = NewsEntry{
-			UID:         item.Node.UID,
+			UID:         uid,
 			Authors:     authors,
 			Categories:  categories,
-			Date:        item.Node.Date,
-			Description: item.Node.Description,
-			Image:       item.Node.Banner.URL,
+			Date:        item.Date,
+			Description: item.Description.Body,
+			Image:       item.Media.URL,
 			Tags:        tags,
-			Title:       item.Node.Title,
+			Title:       item.Title,
 			URL:         url,
 		}
 	}

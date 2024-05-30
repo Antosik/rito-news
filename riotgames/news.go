@@ -77,7 +77,7 @@ func (client NewsClient) initialLoad() ([]string, string, error) {
 	return strings.Split(ids, ","), strings.Join(newsHTML, ""), nil
 }
 
-func (client NewsClient) loadNewsWithIds(ids []string) (string, error) {
+func (client NewsClient) loadNewsWithIDs(ids []string) (string, error) {
 	widget := fmt.Sprintf(`{"loadMorePageSize":%d,"loadMoreMethod":"button"}`, len(ids))
 	url := fmt.Sprintf(
 		`https://www.riotgames.com/%s/api/load-more/maxi-grid?ids=%s&widget=%s`,
@@ -116,7 +116,9 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 		date, err = utils.ParseDateTimeWithLayouts(dateStr, []string{
 			"02/01/2006",
 			"Jan 2, 2006",
+			"Jan 2, 2006Jan 2, 2006",
 			"January 2, 2006",
+			"January 2, 2006January 2, 2006",
 			"2006/01/02",
 			"02.01.2006",
 			"2 January, 2006",
@@ -157,7 +159,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	if count > len(items) {
 		idsToLoadCount := utils.MinInt(count-len(items), len(ids))
 
-		news, err := client.loadNewsWithIds(ids[:idsToLoadCount])
+		news, err := client.loadNewsWithIDs(ids[:idsToLoadCount])
 		if err != nil {
 			return nil, err
 		}
