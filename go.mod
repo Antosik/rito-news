@@ -7,6 +7,7 @@ toolchain go1.22.3
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/go-rod/rod v0.116.0
+	github.com/google/uuid v1.6.0
 )
 
 require (

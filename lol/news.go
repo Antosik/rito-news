@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
+	"github.com/google/uuid"
 )
 
 // League of Legends news entry
@@ -124,11 +125,17 @@ func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 }
 
 func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
+	link := entry.Action.Payload.URL
+
 	switch linkType := entry.Action.Type; linkType {
 	case "weblink":
+		if strings.HasPrefix(link, "http") {
+			return link
+		}
+
 		return fmt.Sprintf("https://www.leagueoflegends.com/%s/", utils.TrimSlashes(entry.Action.Payload.URL))
 	case "youtube_video":
-		return entry.Action.Payload.URL
+		return link
 	default:
 		return fmt.Sprintf("https://www.leagueoflegends.com/%s/news", client.Locale)
 	}
@@ -145,7 +152,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
 
-		uid := item.Action.Payload.URL
+		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 		authors := make([]string, 0)
 		categories := []string{item.Category.Title}
 		tags := make([]string, 0)
