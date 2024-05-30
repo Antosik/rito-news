@@ -49,7 +49,7 @@ type rawNewsEntry struct {
 
 type rawDataBladeResponse struct {
 	Type       string         `json:"type"`
-	FragmentId string         `json:"fragmentId"` // should be 'news'
+	FragmentID string         `json:"fragmentId"` // should be 'news'
 	Items      []rawNewsEntry `json:"items"`
 }
 
@@ -98,7 +98,7 @@ func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 	}
 
 	for _, item := range response.Props.PageProps.Page.Blades {
-		if item.FragmentId != "news" || len(item.Items) == 0 {
+		if item.FragmentID != "news" || len(item.Items) == 0 {
 			continue
 		}
 
