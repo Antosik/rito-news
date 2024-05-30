@@ -9,7 +9,12 @@ import (
 func Example_LoLNews(locale string, count int) {
 	client := lol.NewsClient{Locale: locale}
 
-	entries, _ := client.GetItems(count)
+	entries, err := client.GetItems(count)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}
@@ -18,7 +23,12 @@ func Example_LoLNews(locale string, count int) {
 func Example_LoLEsportsNews(locale string, count int) {
 	client := lol.EsportsClient{Locale: locale}
 
-	entries, _ := client.GetItems(count)
+	entries, err := client.GetItems(count)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}
@@ -27,7 +37,12 @@ func Example_LoLEsportsNews(locale string, count int) {
 func Example_LoLServerStatus(region string, locale string) {
 	client := lol.StatusClient{Region: region}
 
-	entries, _ := client.GetItems(locale)
+	entries, err := client.GetItems(locale)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, entry := range entries {
 		fmt.Println(entry)
 	}
