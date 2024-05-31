@@ -115,12 +115,15 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 
 		date, err = utils.ParseDateTimeWithLayouts(dateStr, []string{
 			"02/01/2006",
+			"02/01/200602/01/2006",
 			"Jan 2, 2006",
 			"Jan 2, 2006Jan 2, 2006",
 			"January 2, 2006",
 			"January 2, 2006January 2, 2006",
 			"2006/01/02",
+			"2006/01/022006/01/02",
 			"02.01.2006",
+			"02.01.200602.01.2006",
 			"2 January, 2006",
 		})
 		if err != nil {
