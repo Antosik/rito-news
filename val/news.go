@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
+	"github.com/google/uuid"
 )
 
 // VALORANT news entry
@@ -110,6 +111,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
+		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
 		categories := make([]string, len(item.Category))
 		for i, category := range item.Category {
@@ -122,7 +124,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 		}
 
 		results[i] = NewsEntry{
-			UID:         item.UID,
+			UID:         uid,
 			Categories:  categories,
 			Date:        item.Date,
 			Description: item.Description,

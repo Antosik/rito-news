@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
+	"github.com/google/uuid"
 )
 
 // Legends of Runeterra news entry
@@ -108,6 +109,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
+		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
 		authors := make([]string, len(item.Author))
 		for i, author := range item.Author {
@@ -125,7 +127,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 		}
 
 		results[i] = NewsEntry{
-			UID:         item.UID,
+			UID:         uid,
 			Authors:     authors,
 			Categories:  categories,
 			Date:        item.Date,
