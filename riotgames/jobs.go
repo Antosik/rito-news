@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Antosik/rito-news/internal/utils"
+	"github.com/google/uuid"
 )
 
 // Riot Games office entry
@@ -25,6 +26,7 @@ type JobsCraftEntry struct {
 
 // Riot Games jobs entry
 type JobsEntry struct {
+	UID      string          `json:"uid"`
 	Craft    JobsCraftEntry  `json:"craft"`
 	Office   JobsOfficeEntry `json:"office"`
 	Products string          `json:"products"`
@@ -118,7 +120,11 @@ func (client JobsClient) GetItems() ([]JobsEntry, error) {
 
 	results := make([]JobsEntry, len(items))
 	for i, entry := range items {
+		url := fmt.Sprintf("https://www.riotgames.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL))
+		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
+
 		results[i] = JobsEntry{
+			UID: uid,
 			Craft: JobsCraftEntry{
 				ID:   entry.CraftID,
 				Name: entry.Craft,
@@ -132,7 +138,7 @@ func (client JobsClient) GetItems() ([]JobsEntry, error) {
 			},
 			Products: entry.Products,
 			Title:    entry.Title,
-			URL:      fmt.Sprintf("https://www.riotgames.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL)),
+			URL:      url,
 		}
 	}
 
