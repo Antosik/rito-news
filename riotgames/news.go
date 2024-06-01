@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
+	"github.com/google/uuid"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
 // RiotGames news entry
 type NewsEntry struct {
+	UID         string    `json:"uid"`
 	Category    string    `json:"category"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
@@ -135,7 +137,10 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 			url = "https://www.riotgames.com/" + utils.TrimSlashes(url)
 		}
 
+		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
+
 		news[i] = NewsEntry{
+			UID:         uid,
 			Category:    el.Find(".eyebrow span").Text(),
 			Date:        date,
 			Description: el.Find(".summary__sell").Text(),

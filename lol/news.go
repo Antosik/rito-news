@@ -151,8 +151,8 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
-
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
+
 		authors := make([]string, 0)
 		categories := []string{item.Category.Title}
 		tags := make([]string, 0)

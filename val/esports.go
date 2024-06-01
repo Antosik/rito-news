@@ -8,6 +8,7 @@ import (
 
 	"github.com/Antosik/rito-news/internal/contentstack"
 	"github.com/Antosik/rito-news/internal/utils"
+	"github.com/google/uuid"
 )
 
 // VALORANT esports news entry
@@ -137,6 +138,7 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 
 	for i, item := range items {
 		url := client.getLinkForEntry(item)
+		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
 		authors := make([]string, len(item.Authors))
 		for i, author := range item.Authors {
@@ -149,7 +151,7 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 		}
 
 		results[i] = EsportsEntry{
-			UID:         item.UID,
+			UID:         uid,
 			Authors:     authors,
 			Date:        item.Date,
 			Description: item.Description,
