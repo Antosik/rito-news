@@ -119,6 +119,7 @@ func (client JobsClient) GetItems() ([]JobsEntry, error) {
 	}
 
 	results := make([]JobsEntry, len(items))
+
 	for i, entry := range items {
 		url := fmt.Sprintf("https://www.riotgames.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL))
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
