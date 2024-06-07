@@ -3,8 +3,8 @@ package val
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
@@ -14,6 +14,7 @@ import (
 // VALORANT news entry
 type NewsEntry struct {
 	UID         string    `json:"uid"`
+	Authors     []string  `json:"authors"`
 	Categories  []string  `json:"categories"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
@@ -24,33 +25,43 @@ type NewsEntry struct {
 }
 
 type rawNewsEntry struct {
-	UID         string `json:"uid"`
-	ArticleTags []struct {
-		Title string `json:"title"`
-	} `json:"article_tags"`
-	Banner struct {
-		URL string `json:"url"`
-	} `json:"banner"`
-	Category []struct {
-		Title string `json:"title"`
+	Title  string    `json:"title"`
+	Date   time.Time `json:"publishedAt"`
+	Action struct {
+		Type    string `json:"type"` // 'weblink', 'youtube_video'
+		Payload struct {
+			URL string `json:"url"`
+		} `json:"payload"`
+	} `json:"action"`
+	Media struct {
+		Type string `json:"type"` // 'image'
+		URL  string `json:"url"`
+	} `json:"media"`
+	Description struct {
+		Type string `json:"type"` // 'html'
+		Body string `json:"body"`
+	} `json:"description"`
+	Category struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		MachineName string `json:"machineName"`
 	} `json:"category"`
-	Date         time.Time `json:"date"`
-	Description  string    `json:"description"`
-	ExternalLink string    `json:"external_link"`
-	Title        string    `json:"title"`
-	URL          struct {
-		URL string `json:"url"`
-	} `json:"url"`
 }
 
-type rawNewsResponse struct {
-	Result struct {
-		Data struct {
-			AllContentstackArticles struct {
-				Nodes []rawNewsEntry `json:"nodes"`
-			} `json:"allContentstackArticles"`
-		} `json:"data"`
-	} `json:"result"`
+type rawDataBladeResponse struct {
+	Type       string         `json:"type"`
+	FragmentID string         `json:"fragmentId"` // should be 'news'
+	Items      []rawNewsEntry `json:"items"`
+}
+
+type rawDataResponse struct {
+	Props struct {
+		PageProps struct {
+			Page struct {
+				Blades []rawDataBladeResponse `json:"blades"`
+			} `json:"page"`
+		} `json:"pageProps"`
+	} `json:"props"`
 }
 
 // A client that allows to get official VALORANT news.
@@ -65,40 +76,68 @@ type NewsClient struct {
 
 func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 	url := fmt.Sprintf(
-		"https://playvalorant.com/page-data/%s/news/page-data.json",
+		"https://playvalorant.com/%s/news/",
 		client.Locale,
 	)
 
-	req, err := utils.NewGETJSONRequest(url)
+	body, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	httpClient := &http.Client{}
-
-	res, err := httpClient.Do(req)
+	doc, err := utils.ReadHTML(body)
 	if err != nil {
-		return nil, fmt.Errorf("can't load news: %w", err)
+		return nil, fmt.Errorf("can't read news page content: %w", err)
 	}
-	defer res.Body.Close()
 
-	var response rawNewsResponse
-	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+	content := doc.Find("#__NEXT_DATA__").Text()
+
+	var response rawDataResponse
+	if err := json.NewDecoder(strings.NewReader(content)).Decode(&response); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	nodes := response.Result.Data.AllContentstackArticles.Nodes
-	sliceSize := utils.MinInt(count, len(nodes))
+	for _, item := range response.Props.PageProps.Page.Blades {
+		if item.FragmentID != "news" || len(item.Items) == 0 {
+			continue
+		}
 
-	return nodes[:sliceSize], nil
+		items := item.Items
+
+		// Sort in case of same publish date
+		sort.Slice(items, func(i, j int) bool {
+			datecomp := items[i].Date.Compare(items[j].Date)
+
+			if datecomp == 0 {
+				return items[i].Title < items[j].Title
+			}
+
+			return datecomp > 0
+		})
+
+		sliceSize := utils.MinInt(count, len(item.Items))
+
+		return items[:sliceSize], nil
+	}
+
+	return nil, fmt.Errorf("can't find news data: %w", err)
 }
 
 func (client NewsClient) getLinkForEntry(entry rawNewsEntry) string {
-	if entry.ExternalLink != "" {
-		return entry.ExternalLink
-	}
+	link := entry.Action.Payload.URL
 
-	return fmt.Sprintf("https://playvalorant.com/%s/%s", client.Locale, utils.TrimSlashes(entry.URL.URL))
+	switch linkType := entry.Action.Type; linkType {
+	case "weblink":
+		if strings.HasPrefix(link, "http") {
+			return link
+		}
+
+		return fmt.Sprintf("https://playvalorant.com/%s/", utils.TrimSlashes(entry.Action.Payload.URL))
+	case "youtube_video":
+		return link
+	default:
+		return fmt.Sprintf("https://playvalorant.com/%s/news", client.Locale)
+	}
 }
 
 func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
@@ -113,22 +152,17 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 		url := client.getLinkForEntry(item)
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
-		categories := make([]string, len(item.Category))
-		for i, category := range item.Category {
-			categories[i] = category.Title
-		}
-
-		tags := make([]string, len(item.ArticleTags))
-		for i, tag := range item.ArticleTags {
-			tags[i] = tag.Title
-		}
+		authors := make([]string, 0)
+		categories := []string{item.Category.Title}
+		tags := make([]string, 0)
 
 		results[i] = NewsEntry{
 			UID:         uid,
+			Authors:     authors,
 			Categories:  categories,
 			Date:        item.Date,
-			Description: item.Description,
-			Image:       item.Banner.URL,
+			Description: item.Description.Body,
+			Image:       item.Media.URL,
 			Tags:        tags,
 			Title:       item.Title,
 			URL:         url,
