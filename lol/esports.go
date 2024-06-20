@@ -3,10 +3,11 @@ package lol
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"sort"
 	"time"
 
-	"github.com/Antosik/rito-news/internal/contentstack"
 	"github.com/Antosik/rito-news/internal/utils"
 	"github.com/google/uuid"
 )
@@ -15,6 +16,7 @@ import (
 type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
+	Categories  []string  `json:"categories"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
@@ -24,21 +26,32 @@ type EsportsEntry struct {
 }
 
 type rawEsportsEntry struct {
-	UID    string `json:"uid"`
-	Author []struct {
-		Title string `json:"title"`
-	} `json:"author"`
-	Date         time.Time `json:"date"`
-	ExternalLink string    `json:"external_link"`
-	HeaderImage  struct {
-		URL string `json:"url"`
-	} `json:"header_image"`
-	Intro  string `json:"intro"`
-	League []struct {
-		Title string `json:"title"`
-	} `json:"league"`
-	Title string `json:"title"`
-	URL   string `json:"url"`
+	ID      string `json:"_id"`
+	Authors []struct {
+		Title string `json:"externalTitle"`
+	} `json:"authors"`
+	BannerMedia struct {
+		SanityImage struct {
+			Asset struct {
+				URL string `json:"url"`
+			} `json:"asset"`
+		} `json:"sanityImage"`
+	} `json:"bannerMedia"`
+	Description   string `json:"description"`
+	ExternalTitle string `json:"externalTitle"`
+	ExternalURL   string `json:"externalUrl"`
+	Path          struct {
+		Current string `json:"current"`
+	} `json:"path"`
+	PublishingDates struct {
+		DisplayedPublishDate time.Time `json:"displayedPublishDate"`
+	} `json:"publishingDates"`
+}
+
+type rawResponse struct {
+	Data struct {
+		AllArticle []rawEsportsEntry `json:"allArticle"`
+	} `json:"data"`
 }
 
 // A client that allows to get League of Legends esports news.
@@ -51,74 +64,56 @@ type EsportsClient struct {
 	Locale string
 }
 
-func (EsportsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
-	return contentstack.GetKeys("https://lolesports.com/news", ".News .content-block", &params)
-}
+func (client EsportsClient) loadItems(count int) ([]rawEsportsEntry, error) {
+	operationName := "LoadMoreNewsList"
+	// nolint:lll
+	variables := url.QueryEscape(fmt.Sprintf(`{"limit":%d,"offset":0,"sort":[{"publishingDates":{"displayedPublishDate":"DESC"}}],"where":{"channel":{"_ref":{"eq":"channel.league_of_legends_esports_website.%s"}}}}`, count, client.Locale))
+	// nolint:lll
+	extensions := url.QueryEscape(`{"persistedQuery":{"version":1,"sha256Hash":"790cc5ed50dd93011f92b3ed1bfcb98c70b5353f5fb718e90590e08a2e9124ff"}}`)
+	query := "operationName=" + operationName + "&" + "variables=" + variables + "&" + "extensions=" + extensions
 
-func (client EsportsClient) getContentStackParameters(count int) contentstack.Parameters {
-	return contentstack.Parameters{
-		ContentType: "articles",
-		Locale:      client.Locale,
-		Count:       count,
-		Environment: "production",
-		Filters: map[string][]string{
-			"query": {`{"hide_from_newsfeeds":{"$ne":true}}`},
-			"only[BASE][]": {
-				"title",
-				"_content_type_uid",
-				"header_image",
-				"author",
-				"league",
-				"date",
-				"intro",
-				"external_link",
-				"url",
-			},
-			"include[]": {
-				"author",
-				"league",
-			},
-			"only[author][]": {
-				"title",
-			},
-			"only[league][]": {
-				"title",
-			},
-		},
+	url := url.URL{
+		Scheme:   "https",
+		Host:     "lolesports.com",
+		Path:     "/api/gql",
+		RawQuery: query,
 	}
-}
 
-func (client EsportsClient) getContentStackItems(count int) ([]rawEsportsEntry, error) {
-	params := client.getContentStackParameters(count)
-	keys := client.getContentStackKeys(params)
-
-	rawitems, err := contentstack.GetItems(keys, &params)
+	req, err := utils.NewGETJSONRequest(url.String())
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]rawEsportsEntry, len(rawitems))
+	req.Header.Set("Apollographql-Client-Name", "Esports Web")
+	req.Header.Set("Apollographql-Client-Version", "0c4923c")
+	req.Header.Set("content-type", "application/json")
 
-	for i, raw := range rawitems {
-		err := json.Unmarshal(raw, &items[i])
-		if err != nil {
-			return nil, fmt.Errorf("can't parse item: %w", err)
-		}
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("unsuccessful request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var response rawResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	return items, nil
+	return response.Data.AllArticle, nil
 }
 
 func (EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
-	if entry.ExternalLink != "" {
-		return entry.ExternalLink
+	if entry.ExternalURL != "" {
+		return entry.ExternalURL
 	}
 
-	return fmt.Sprintf("https://lolesports.com/%s", utils.TrimSlashes(entry.URL))
+	return fmt.Sprintf("https://lolesports.com/%s", utils.TrimSlashes(entry.Path.Current))
 }
 
 func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
-	items, err := client.getContentStackItems(count)
+	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
@@ -129,24 +124,23 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 		url := client.getLinkForEntry(item)
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
-		authors := make([]string, len(item.Author))
-		for i, author := range item.Author {
+		authors := make([]string, len(item.Authors))
+		for i, author := range item.Authors {
 			authors[i] = author.Title
 		}
 
-		tags := make([]string, len(item.League))
-		for i, league := range item.League {
-			tags[i] = league.Title
-		}
+		categories := make([]string, 0)
+		tags := make([]string, 0)
 
 		results[i] = EsportsEntry{
 			UID:         uid,
 			Authors:     authors,
-			Date:        item.Date,
-			Description: item.Intro,
-			Image:       item.HeaderImage.URL,
+			Categories:  categories,
+			Date:        item.PublishingDates.DisplayedPublishDate,
+			Description: item.Description,
+			Image:       item.BannerMedia.SanityImage.Asset.URL,
 			Tags:        tags,
-			Title:       item.Title,
+			Title:       item.ExternalTitle,
 			URL:         url,
 		}
 	}

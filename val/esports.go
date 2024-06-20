@@ -3,10 +3,11 @@ package val
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"sort"
 	"time"
 
-	"github.com/Antosik/rito-news/internal/contentstack"
 	"github.com/Antosik/rito-news/internal/utils"
 	"github.com/google/uuid"
 )
@@ -15,6 +16,7 @@ import (
 type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
+	Categories  []string  `json:"categories"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	Image       string    `json:"image"`
@@ -24,26 +26,32 @@ type EsportsEntry struct {
 }
 
 type rawEsportsEntry struct {
-	UID     string `json:"uid"`
+	ID      string `json:"_id"`
 	Authors []struct {
-		Title string `json:"title"`
+		Title string `json:"externalTitle"`
 	} `json:"authors"`
-	BannerSettings struct {
-		Banner struct {
-			URL string `json:"url"`
-		} `json:"banner"`
-	} `json:"banner_settings"`
-	Date        time.Time `json:"date"`
-	Description string    `json:"description"`
-	Event       []struct {
-		Title string `json:"title"`
-	} `json:"event"`
-	ExternalLink string `json:"external_link"`
-	Title        string `json:"title"`
-	URL          struct {
-		URL string `json:"url"`
-	} `json:"url"`
-	VideoLink string `json:"video_link"`
+	BannerMedia struct {
+		SanityImage struct {
+			Asset struct {
+				URL string `json:"url"`
+			} `json:"asset"`
+		} `json:"sanityImage"`
+	} `json:"bannerMedia"`
+	Description   string `json:"description"`
+	ExternalTitle string `json:"externalTitle"`
+	ExternalURL   string `json:"externalUrl"`
+	Path          struct {
+		Current string `json:"current"`
+	} `json:"path"`
+	PublishingDates struct {
+		DisplayedPublishDate time.Time `json:"displayedPublishDate"`
+	} `json:"publishingDates"`
+}
+
+type rawResponse struct {
+	Data struct {
+		AllArticle []rawEsportsEntry `json:"allArticle"`
+	} `json:"data"`
 }
 
 // A client that allows to get VALORANT esports news.
@@ -57,79 +65,56 @@ type EsportsClient struct {
 	Locale string
 }
 
-func (EsportsClient) getContentStackKeys(params contentstack.Parameters) *contentstack.Keys {
-	return contentstack.GetKeys("https://valorantesports.com/news", `a[href^="/news/"]`, &params)
-}
+func (client EsportsClient) loadItems(count int) ([]rawEsportsEntry, error) {
+	operationName := "LoadMoreNewsList"
+	// nolint:lll
+	variables := url.QueryEscape(fmt.Sprintf(`{"limit":%d,"offset":0,"sort":[{"publishingDates":{"displayedPublishDate":"DESC"}}],"where":{"channel":{"_ref":{"eq":"channel.valorant_esports_website.%s"}}}}`, count, client.Locale))
+	// nolint:lll
+	extensions := url.QueryEscape(`{"persistedQuery":{"version":1,"sha256Hash":"790cc5ed50dd93011f92b3ed1bfcb98c70b5353f5fb718e90590e08a2e9124ff"}}`)
+	query := "operationName=" + operationName + "&" + "variables=" + variables + "&" + "extensions=" + extensions
 
-func (client EsportsClient) getContentStackParameters(count int) contentstack.Parameters {
-	return contentstack.Parameters{
-		ContentType: "articles",
-		Locale:      client.Locale,
-		Count:       count,
-		Environment: "production",
-		Filters: map[string][]string{
-			"query": {`{"hide_from_newsfeeds":{"$ne":true}}`},
-			"only[BASE][]": {
-				"title",
-				"_content_type_uid",
-				"banner_settings",
-				"authors",
-				"date",
-				"description",
-				"event",
-				"external_link",
-				"url",
-				"video_link",
-			},
-			"include[]": {
-				"authors",
-				"event",
-			},
-			"only[authors][]": {
-				"title",
-			},
-			"only[event][]": {
-				"title",
-			},
-		},
+	url := url.URL{
+		Scheme:   "https",
+		Host:     "valorantesports.com",
+		Path:     "/api/gql",
+		RawQuery: query,
 	}
-}
 
-func (client EsportsClient) getContentStackItems(count int) ([]rawEsportsEntry, error) {
-	params := client.getContentStackParameters(count)
-	keys := client.getContentStackKeys(params)
-
-	rawitems, err := contentstack.GetItems(keys, &params)
+	req, err := utils.NewGETJSONRequest(url.String())
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]rawEsportsEntry, len(rawitems))
+	req.Header.Set("Apollographql-Client-Name", "Esports Web")
+	req.Header.Set("Apollographql-Client-Version", "0c4923c")
+	req.Header.Set("content-type", "application/json")
 
-	for i, raw := range rawitems {
-		err := json.Unmarshal(raw, &items[i])
-		if err != nil {
-			return nil, fmt.Errorf("can't parse item: %w", err)
-		}
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("unsuccessful request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var response rawResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("can't decode response: %w", err)
 	}
 
-	return items, nil
+	return response.Data.AllArticle, nil
 }
 
 func (client EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
-	if entry.ExternalLink != "" {
-		return entry.ExternalLink
+	if entry.ExternalURL != "" {
+		return entry.ExternalURL
 	}
 
-	if entry.VideoLink != "" {
-		return entry.VideoLink
-	}
-
-	return fmt.Sprintf("https://valorantesports.com/%s/%s", utils.TrimSlashes(entry.URL.URL), client.Locale)
+	return fmt.Sprintf("https://valorantesports.com/%s", utils.TrimSlashes(entry.Path.Current))
 }
 
 func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
-	items, err := client.getContentStackItems(count)
+	items, err := client.loadItems(count)
 	if err != nil {
 		return nil, err
 	}
@@ -145,19 +130,18 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 			authors[i] = author.Title
 		}
 
-		tags := make([]string, len(item.Event))
-		for i, event := range item.Event {
-			tags[i] = event.Title
-		}
+		categories := make([]string, 0)
+		tags := make([]string, 0)
 
 		results[i] = EsportsEntry{
 			UID:         uid,
 			Authors:     authors,
-			Date:        item.Date,
+			Categories:  categories,
+			Date:        item.PublishingDates.DisplayedPublishDate,
 			Description: item.Description,
-			Image:       item.BannerSettings.Banner.URL,
+			Image:       item.BannerMedia.SanityImage.Asset.URL,
 			Tags:        tags,
-			Title:       item.Title,
+			Title:       item.ExternalTitle,
 			URL:         url,
 		}
 	}
