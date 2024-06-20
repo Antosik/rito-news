@@ -39,7 +39,7 @@ type rawEsportsEntry struct {
 	} `json:"bannerMedia"`
 	Description   string `json:"description"`
 	ExternalTitle string `json:"externalTitle"`
-	ExternalUrl   string `json:"externalUrl"`
+	ExternalURL   string `json:"externalUrl"`
 	Path          struct {
 		Current string `json:"current"`
 	} `json:"path"`
@@ -67,7 +67,9 @@ type EsportsClient struct {
 
 func (client EsportsClient) loadItems(count int) ([]rawEsportsEntry, error) {
 	operationName := "LoadMoreNewsList"
+	// nolint:lll
 	variables := url.QueryEscape(fmt.Sprintf(`{"limit":%d,"offset":0,"sort":[{"publishingDates":{"displayedPublishDate":"DESC"}}],"where":{"channel":{"_ref":{"eq":"channel.valorant_esports_website.%s"}}}}`, count, client.Locale))
+	// nolint:lll
 	extensions := url.QueryEscape(`{"persistedQuery":{"version":1,"sha256Hash":"790cc5ed50dd93011f92b3ed1bfcb98c70b5353f5fb718e90590e08a2e9124ff"}}`)
 	query := "operationName=" + operationName + "&" + "variables=" + variables + "&" + "extensions=" + extensions
 
@@ -104,8 +106,8 @@ func (client EsportsClient) loadItems(count int) ([]rawEsportsEntry, error) {
 }
 
 func (client EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
-	if entry.ExternalUrl != "" {
-		return entry.ExternalUrl
+	if entry.ExternalURL != "" {
+		return entry.ExternalURL
 	}
 
 	return fmt.Sprintf("https://valorantesports.com/%s", utils.TrimSlashes(entry.Path.Current))
