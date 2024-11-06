@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// VALORANT esports news entry
+// VALORANT esports news entry.
 type EsportsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -67,12 +67,13 @@ type EsportsClient struct {
 
 func (client EsportsClient) loadItems(count int) ([]rawEsportsEntry, error) {
 	operationName := "LoadMoreNewsList"
-	// nolint:lll
+	//nolint:lll
 	variables := url.QueryEscape(fmt.Sprintf(`{"limit":%d,"offset":0,"sort":[{"publishingDates":{"displayedPublishDate":"DESC"}}],"where":{"channel":{"_ref":{"eq":"channel.valorant_esports_website.%s"}}}}`, count, client.Locale))
-	// nolint:lll
+	//nolint:lll
 	extensions := url.QueryEscape(`{"persistedQuery":{"version":1,"sha256Hash":"790cc5ed50dd93011f92b3ed1bfcb98c70b5353f5fb718e90590e08a2e9124ff"}}`)
 	query := "operationName=" + operationName + "&" + "variables=" + variables + "&" + "extensions=" + extensions
 
+	//nolint:exhaustruct
 	url := url.URL{
 		Scheme:   "https",
 		Host:     "valorantesports.com",
@@ -82,14 +83,14 @@ func (client EsportsClient) loadItems(count int) ([]rawEsportsEntry, error) {
 
 	req, err := utils.NewGETJSONRequest(url.String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get json content: %w", err)
 	}
 
 	req.Header.Set("Apollographql-Client-Name", "Esports Web")
 	req.Header.Set("Apollographql-Client-Version", "0c4923c")
-	req.Header.Set("content-type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
-	httpClient := &http.Client{}
+	httpClient := &http.Client{} //exhaustruct:ignore
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -110,7 +111,7 @@ func (client EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
 		return entry.ExternalURL
 	}
 
-	return fmt.Sprintf("https://valorantesports.com/%s", utils.TrimSlashes(entry.Path.Current))
+	return "https://valorantesports.com/" + utils.TrimSlashes(entry.Path.Current)
 }
 
 func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
@@ -121,7 +122,7 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 
 	results := make([]EsportsEntry, len(items))
 
-	for i, item := range items {
+	for index, item := range items {
 		url := client.getLinkForEntry(item)
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
@@ -133,7 +134,7 @@ func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
 		categories := make([]string, 0)
 		tags := make([]string, 0)
 
-		results[i] = EsportsEntry{
+		results[index] = EsportsEntry{
 			UID:         uid,
 			Authors:     authors,
 			Categories:  categories,

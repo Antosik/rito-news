@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Legends of Runeterra news entry
+// Legends of Runeterra news entry.
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Authors     []string  `json:"authors"`
@@ -70,10 +70,10 @@ func (client NewsClient) loadItems(count int) ([]rawNewsEntry, error) {
 
 	req, err := utils.NewGETJSONRequest(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get json content: %w", err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := &http.Client{} //nolint:exhaustruct
 
 	res, err := httpClient.Do(req)
 	if err != nil {
@@ -107,7 +107,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 
 	results := make([]NewsEntry, len(items))
 
-	for i, item := range items {
+	for index, item := range items {
 		url := client.getLinkForEntry(item)
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
@@ -126,7 +126,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 			tags[i] = tag.Title
 		}
 
-		results[i] = NewsEntry{
+		results[index] = NewsEntry{
 			UID:         uid,
 			Authors:     authors,
 			Categories:  categories,

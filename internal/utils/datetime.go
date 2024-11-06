@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+var errDatetimeParse = errors.New("can't parse datetime")
 
 func ParseDateTimeWithLayouts(datetime string, layouts []string) (time.Time, error) {
 	for _, layout := range layouts {
@@ -13,5 +16,5 @@ func ParseDateTimeWithLayouts(datetime string, layouts []string) (time.Time, err
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("can't parse datetime %s", datetime)
+	return time.Time{}, fmt.Errorf("%w: no valid layouts found for %s", errDatetimeParse, datetime)
 }

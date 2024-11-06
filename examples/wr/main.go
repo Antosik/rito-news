@@ -20,20 +20,6 @@ func Example_WRNews(locale string, count int) {
 	}
 }
 
-func Example_WREsportsNews(locale string, count int) {
-	client := wr.EsportsClient{Locale: locale}
-
-	entries, err := client.GetItems(count)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for _, entry := range entries {
-		fmt.Println(entry)
-	}
-}
-
 func Example_WRServerStatus(region string, locale string) {
 	client := wr.StatusClient{Region: region}
 
@@ -51,13 +37,6 @@ func Example_WRServerStatus(region string, locale string) {
 func main() {
 	fmt.Println("Latest League of Legends: Wild Rift News")
 	Example_WRNews("en-us", 1)
-
-	fmt.Println()
-	fmt.Println("---")
-	fmt.Println()
-
-	fmt.Println("Latest League of Legends: Wild Rift Esports News")
-	Example_WREsportsNews("en-us", 1)
 
 	fmt.Println()
 	fmt.Println("---")

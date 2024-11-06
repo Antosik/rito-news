@@ -1,18 +1,20 @@
 package riotgames
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Antosik/rito-news/internal/utils"
-	"github.com/google/uuid"
-
 	"github.com/PuerkitoBio/goquery"
+	"github.com/google/uuid"
 )
 
-// RiotGames news entry
+var errNoNewsPageLink = errors.New("can't find news page link")
+
+// RiotGames news entry.
 type NewsEntry struct {
 	UID         string    `json:"uid"`
 	Category    string    `json:"category"`
@@ -34,19 +36,21 @@ type NewsClient struct {
 }
 
 func (client NewsClient) initialLoad() ([]string, string, error) {
-	main, err := utils.RunGETHTMLRequest(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
+	url := "https://www.riotgames.com/" + client.Locale
+
+	main, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("can't get main page html content: %w", err)
 	}
 
 	maindoc, err := utils.ReadHTML(main)
 	if err != nil {
-		return nil, "", fmt.Errorf("can't read main content: %w", err)
+		return nil, "", fmt.Errorf("can't read main page content: %w", err)
 	}
 
 	link, linkFound := maindoc.Find(".whats-happening__cta").Attr("href")
 	if !linkFound {
-		return nil, "", fmt.Errorf("can't find careers page link")
+		return nil, "", errNoNewsPageLink
 	}
 
 	if !strings.Contains(link, "https://www.riotgames.com") {
@@ -55,7 +59,7 @@ func (client NewsClient) initialLoad() ([]string, string, error) {
 
 	news, err := utils.RunGETHTMLRequest(link)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("can't get news page html content: %w", err)
 	}
 
 	newsdoc, err := utils.ReadHTML(news)
@@ -90,7 +94,7 @@ func (client NewsClient) loadNewsWithIDs(ids []string) (string, error) {
 
 	body, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("can't load more news html: %w", err)
 	}
 
 	return strings.ReplaceAll(body, `\"`, `"`), nil
@@ -105,10 +109,10 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 	items := doc.Find(".summary")
 	news := make([]NewsEntry, items.Size())
 
-	for i := range items.Nodes {
-		el := items.Eq(i)
+	for index := range items.Nodes {
+		node := items.Eq(index)
 
-		dateStr := el.Find(".summary__date").Text()
+		dateStr := node.Find(".summary__date").Text()
 
 		var (
 			date time.Time
@@ -132,20 +136,20 @@ func (NewsClient) extractNewsFromHTML(html string) ([]NewsEntry, error) {
 			return nil, fmt.Errorf("can't parse article date: %w", err)
 		}
 
-		url, _ := el.Find("a").Attr("href")
+		url, _ := node.Find("a").Attr("href")
 		if !strings.Contains(url, "https://www.riotgames.com") {
 			url = "https://www.riotgames.com/" + utils.TrimSlashes(url)
 		}
 
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
-		news[i] = NewsEntry{
+		news[index] = NewsEntry{
 			UID:         uid,
-			Category:    el.Find(".eyebrow span").Text(),
+			Category:    node.Find(".eyebrow span").Text(),
 			Date:        date,
-			Description: el.Find(".summary__sell").Text(),
-			Image:       el.Find("img").AttrOr("src", ""),
-			Title:       el.Find("h3 span").Text(),
+			Description: node.Find(".summary__sell").Text(),
+			Image:       node.Find("img").AttrOr("src", ""),
+			Title:       node.Find("h3 span").Text(),
 			URL:         url,
 		}
 	}
