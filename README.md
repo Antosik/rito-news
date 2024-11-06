@@ -51,7 +51,6 @@ func main() {
     -   [Server status](https://status.riotgames.com/valorant?region=na&locale=en_US)
 -   Wild Rift ([examples](https://github.com/Antosik/rito-news/blob/main/examples/wr/main.go))
     -   [News](https://wildrift.leagueoflegends.com/en-us/news/)
-    -   [Esports](https://wildriftesports.com/en-us/news)
     -   [Server status](https://status.riotgames.com/wildrift?region=na&locale=en_US)
 
 ## Attribution
