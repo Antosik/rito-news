@@ -1,4 +1,4 @@
-// Package browser is the utility package that allows to launch browser with the perfomance oriented arguments
+// Package browser is the utility package that allows to launch browser with the performance oriented arguments
 package browser
 
 import (
@@ -22,7 +22,7 @@ func GetBrowserPath() string {
 func NewBrowser() *rod.Browser {
 	path := GetBrowserPath()
 
-	u := launcher.New().
+	url := launcher.New().
 		Bin(path).
 		Set("--allow-running-insecure-content").
 		Set("--autoplay-policy", "user-gesture-required"). // Don't render video
@@ -55,5 +55,5 @@ func NewBrowser() *rod.Browser {
 		Set("--single-process").           // Runs the renderer and plugins in the same process as the browser.
 		MustLaunch()
 
-	return rod.New().ControlURL(u).MustConnect()
+	return rod.New().ControlURL(url).MustConnect()
 }

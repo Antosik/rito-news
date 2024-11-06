@@ -1,10 +1,12 @@
 package val
 
 import (
+	"fmt"
+
 	"github.com/Antosik/rito-news/internal/nextjsnews"
 )
 
-// VALORANT news entry
+// VALORANT news entry.
 type NewsEntry = nextjsnews.Item
 
 // A client that allows to get official VALORANT news.
@@ -22,7 +24,7 @@ func (client NewsClient) GetItems(count int) ([]NewsEntry, error) {
 
 	items, err := parser.GetItems(count)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get news items: %w", err)
 	}
 
 	return items, nil

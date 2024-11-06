@@ -2,6 +2,7 @@ package riotgames
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,7 +10,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// Riot Games office entry
+var (
+	errNoCareersPageLink     = errors.New("can't find careers page link")
+	errNoDataAttributeOnNode = errors.New("can't find data attribute")
+)
+
+// Riot Games office entry.
 type JobsOfficeEntry struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -17,14 +23,14 @@ type JobsOfficeEntry struct {
 	URL  string `json:"url"`
 }
 
-// Riot Games craft entry
+// Riot Games craft entry.
 type JobsCraftEntry struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	More string `json:"more"`
 }
 
-// Riot Games jobs entry
+// Riot Games jobs entry.
 type JobsEntry struct {
 	UID      string          `json:"uid"`
 	Craft    JobsCraftEntry  `json:"craft"`
@@ -59,19 +65,21 @@ type JobsClient struct {
 }
 
 func (client JobsClient) loadData() (string, string, error) {
-	main, err := utils.RunGETHTMLRequest(fmt.Sprintf("https://www.riotgames.com/%s", client.Locale))
+	url := "https://www.riotgames.com/" + client.Locale
+
+	main, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("can't get main page html content: %w", err)
 	}
 
 	maindoc, err := utils.ReadHTML(main)
 	if err != nil {
-		return "", "", fmt.Errorf("can't read main content: %w", err)
+		return "", "", fmt.Errorf("can't read main page content: %w", err)
 	}
 
 	link, linkFound := maindoc.Find(".careers__cta").Attr("href")
 	if !linkFound {
-		return "", "", fmt.Errorf("can't find careers page link")
+		return "", "", errNoCareersPageLink
 	}
 
 	if !strings.Contains(link, "https://www.riotgames.com") {
@@ -80,7 +88,7 @@ func (client JobsClient) loadData() (string, string, error) {
 
 	jobs, err := utils.RunGETHTMLRequest(link)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("can't get jobs page html content: %w", err)
 	}
 
 	jobsdoc, err := utils.ReadHTML(jobs)
@@ -90,7 +98,7 @@ func (client JobsClient) loadData() (string, string, error) {
 
 	data, dataFound := jobsdoc.Find(".js-job-list-wrapper").Attr("data-props")
 	if !dataFound {
-		return "", "", fmt.Errorf("can't find data attribute")
+		return "", "", errNoDataAttributeOnNode
 	}
 
 	return data, link, nil

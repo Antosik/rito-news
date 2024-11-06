@@ -8,7 +8,7 @@ import (
 	"github.com/Antosik/rito-news/internal/serverstatus"
 )
 
-// VALORANT server status entry
+// VALORANT server status entry.
 type StatusEntry serverstatus.Entry
 
 // A client that allows to get VALORANT server status.
@@ -26,7 +26,12 @@ func (client StatusClient) loadItems(locale string) ([]serverstatus.Entry, error
 		client.Region,
 	)
 
-	return serverstatus.GetItems(url, locale)
+	items, err := serverstatus.GetItems(url, locale)
+	if err != nil {
+		return nil, fmt.Errorf("can't get items: %w", err)
+	}
+
+	return items, nil
 }
 
 func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale string) string {
@@ -40,7 +45,7 @@ func (client StatusClient) getLinkForEntry(entry serverstatus.Entry, locale stri
 
 // Available locales:
 // en-US, ar-AE, de-DE, es-ES, es-MX, fr-FR, id-ID, it-IT, ja-JP,
-// ko-KR, pl-PL, pt-BR, ru-RU, tr-TR, th-TH, vi-VN, zh-TW
+// ko-KR, pl-PL, pt-BR, ru-RU, tr-TR, th-TH, vi-VN, zh-TW.
 func (client StatusClient) GetItems(locale string) ([]StatusEntry, error) {
 	items, err := client.loadItems(locale)
 	if err != nil {
@@ -48,14 +53,14 @@ func (client StatusClient) GetItems(locale string) ([]StatusEntry, error) {
 	}
 
 	results := make([]StatusEntry, len(items))
-	for i, item := range items {
-		results[i] = StatusEntry{
+	for index, item := range items {
+		results[index] = StatusEntry{
 			UID:         item.UID,
 			Author:      item.Author,
 			Date:        item.Date,
 			Description: item.Description,
 			Title:       item.Title,
-			URL:         client.getLinkForEntry(items[i], locale),
+			URL:         client.getLinkForEntry(items[index], locale),
 		}
 	}
 

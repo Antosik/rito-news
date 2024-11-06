@@ -15,6 +15,7 @@ func getLocaleFromRawTranslationEntry(translations []rawTranslationEntry, locale
 		if strings.EqualFold(translation.Locale, locale) ||
 			strings.EqualFold(translation.Locale, strings.ReplaceAll(locale, "-", "_")) {
 			result = translation.Content
+
 			break
 		}
 
@@ -46,6 +47,7 @@ func transformRawEntryToEntry(status rawEntry, locale string) []Entry {
 			Description: getLocaleFromRawTranslationEntry(update.Translations, locale),
 			Author:      update.Author,
 			Date:        update.CreatedAt,
+			URL:         "",
 		})
 	}
 

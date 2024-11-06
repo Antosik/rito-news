@@ -46,10 +46,10 @@ type rawResponse struct {
 func GetItems(url string, locale string) ([]Entry, error) {
 	req, err := utils.NewGETJSONRequest(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get json content: %w", err)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{} //nolint:exhaustruct
 
 	resp, err := client.Do(req)
 	if err != nil {

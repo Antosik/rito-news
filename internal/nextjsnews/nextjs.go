@@ -78,7 +78,7 @@ func (parser Parser) loadData() ([]rawItem, error) {
 
 	body, err := utils.RunGETHTMLRequest(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get html content: %w", err)
 	}
 
 	doc, err := utils.ReadHTML(body)
@@ -124,7 +124,7 @@ func (parser Parser) getLinkForItem(item rawItem) string {
 func (parser Parser) transformRawItems(rawItems []rawItem) []Item {
 	items := make([]Item, len(rawItems))
 
-	for i, rawItem := range rawItems {
+	for index, rawItem := range rawItems {
 		url := parser.getLinkForItem(rawItem)
 		uid := uuid.NewMD5(uuid.NameSpaceURL, []byte(url)).String()
 
@@ -132,7 +132,7 @@ func (parser Parser) transformRawItems(rawItems []rawItem) []Item {
 		categories := []string{rawItem.Category.Title}
 		tags := make([]string, 0)
 
-		items[i] = Item{
+		items[index] = Item{
 			UID:         uid,
 			Authors:     authors,
 			Categories:  categories,

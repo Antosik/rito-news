@@ -14,9 +14,9 @@ func NewGETRequest(url string) (*http.Request, error) {
 		return nil, fmt.Errorf("can't create request: %w", err)
 	}
 
-	req.Header.Set("user-agent", UserAgent)
+	req.Header.Set("User-Agent", UserAgent)
 
-	return req, err
+	return req, nil
 }
 
 func NewGETJSONRequest(url string) (*http.Request, error) {
@@ -27,7 +27,7 @@ func NewGETJSONRequest(url string) (*http.Request, error) {
 
 	req.Header.Set("Accept", "application/json")
 
-	return req, err
+	return req, nil
 }
 
 func RunGETHTMLRequest(url string) (string, error) {
@@ -36,7 +36,7 @@ func RunGETHTMLRequest(url string) (string, error) {
 		return "", err
 	}
 
-	httpClient := &http.Client{}
+	httpClient := &http.Client{} //nolint:exhaustruct
 
 	res, err := httpClient.Do(req)
 	if err != nil {

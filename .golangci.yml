@@ -9,11 +9,23 @@ outputs:
   format: colored-line-number
 
 linters:
-  enable:
-    - revive
-    - gosec
-    - lll
-    - wsl
+  presets:
+    - bugs
+    - comment
+    - complexity
+    - error
+    - format
+    - import
+    - metalinter
+    - module
+    - performance
+    - style
+    - test
+    - unused
+  disable:
+   - depguard # tbd
+   - tagliatelle # json case differs from service to service
+   
 
 linters-settings:
   gosec:
