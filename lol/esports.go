@@ -110,7 +110,7 @@ func (EsportsClient) getLinkForEntry(entry rawEsportsEntry) string {
 		return entry.ExternalURL
 	}
 
-	return "https://lolesports.com/%s" + utils.TrimSlashes(entry.Path.Current)
+	return "https://lolesports.com/" + utils.TrimSlashes(entry.Path.Current)
 }
 
 func (client EsportsClient) GetItems(count int) ([]EsportsEntry, error) {
